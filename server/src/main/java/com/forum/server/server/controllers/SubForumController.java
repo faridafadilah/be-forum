@@ -52,9 +52,9 @@ public class SubForumController {
 
   //Edit Sub Forum
   @PostMapping("/{id}")
-  public ResponseEntity<ResponAPI<SubResponse>> updateSubForum(@PathVariable Long id, @RequestBody SubRequest body) {
+  public ResponseEntity<ResponAPI<SubResponse>> updateSubForum(@PathVariable Long id, @ModelAttribute SubRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<SubResponse> responAPI = new ResponAPI<>();
-    if(!subService.updateSubForum(body, id, responAPI)) {
+    if(!subService.updateSubForum(body, file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
     return ResponseEntity.ok(responAPI);

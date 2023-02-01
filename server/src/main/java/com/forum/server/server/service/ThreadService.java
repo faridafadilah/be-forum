@@ -94,7 +94,7 @@ public class ThreadService {
     return true;
   }
 
-  public boolean updateThread(ThreadRequest body, Long id, ResponAPI<ThreadResponse> responAPI) {
+  public boolean updateThread(ThreadRequest body, MultipartFile file, Long id, ResponAPI<ThreadResponse> responAPI) {
     Optional<Thread> tOptional = threadRepository.findById(id);
     if (!tOptional.isPresent()) {
       responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
@@ -103,6 +103,25 @@ public class ThreadService {
     }
     try {
       Thread thread = tOptional.get();
+      if (file.isEmpty()) {
+        responAPI.setErrorMessage("File tidak boleh kosong");
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        return false;
+      }
+      try {
+        String nameImage = thread.getNameImage();
+        Path oldFile = root.resolve(nameImage);
+        Files.deleteIfExists(oldFile);
+        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        thread.setNameImage(filename);
+      } catch (Exception e) {
+        if (e instanceof FileAlreadyExistsException) {
+          throw new RuntimeException("A file of that name already exists.");
+        }
+
+        throw new RuntimeException(e.getMessage());
+      }
       thread.setId(id);
       thread.setTitle(body.getTitle());
       thread.setContent(body.getContent());

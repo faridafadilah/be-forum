@@ -75,7 +75,7 @@ public class SubService {
     return forum.isPresent() ? forum.get() : null;
   }
 
-  public boolean updateSubForum(SubRequest body, Long id, ResponAPI<SubResponse> responAPI) {
+  public boolean updateSubForum(SubRequest body, MultipartFile file, Long id, ResponAPI<SubResponse> responAPI) {
     Optional<SubForum> sOptional = subForumRepository.findById(id);
     if (!sOptional.isPresent()) {
       responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
@@ -85,6 +85,25 @@ public class SubService {
 
     try {
       SubForum subForum = sOptional.get();
+      if (file.isEmpty()) {
+        responAPI.setErrorMessage("File tidak boleh kosong");
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        return false;
+      }
+      try {
+        String nameImage = subForum.getNameImage();
+        Path oldFile = root.resolve(nameImage);
+        Files.deleteIfExists(oldFile);
+        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        subForum.setNameImage(filename);
+      } catch (Exception e) {
+        if (e instanceof FileAlreadyExistsException) {
+          throw new RuntimeException("A file of that name already exists.");
+        }
+
+        throw new RuntimeException(e.getMessage());
+      }
       subForum.setId(id);
       subForum.setJudul(body.getJudul());
       subForum.setDescription(body.getDescription());

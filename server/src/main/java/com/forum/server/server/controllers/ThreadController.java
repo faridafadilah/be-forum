@@ -52,9 +52,9 @@ public class ThreadController {
 
   // Edit Thread
   @PostMapping("/{id}")
-  public ResponseEntity<ResponAPI<ThreadResponse>> updateThread(@PathVariable("id") Long id, @RequestBody ThreadRequest body) {
+  public ResponseEntity<ResponAPI<ThreadResponse>> updateThread(@PathVariable("id") Long id, @ModelAttribute ThreadRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<ThreadResponse> responAPI = new ResponAPI<>();
-    if(!threadService.updateThread(body, id, responAPI)) {
+    if(!threadService.updateThread(body, file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
     return ResponseEntity.ok(responAPI);

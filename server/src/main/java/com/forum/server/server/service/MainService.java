@@ -27,7 +27,7 @@ import com.forum.server.server.specification.MainSpecification;
 import javax.validation.ValidationException;
 
 @Service
-public class MainService implements BasePageInterface<MainForum, MainSpecification, MainResponse, Long>{
+public class MainService implements BasePageInterface<MainForum, MainSpecification, MainResponse, Long> {
   private final Path root = Paths.get("./imageMain");
 
   @Autowired
@@ -44,7 +44,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
       throw new RuntimeException(e.getMessage());
     }
-    
+
     try {
       MainForum mainForum = objectMapper.map(body, MainForum.class);
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
@@ -67,7 +67,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
   public boolean updateMainForum(MainRequest body, MultipartFile file, Long id, ResponAPI<MainResponse> responAPI) {
     // findById
     Optional<MainForum> mOptional = mainForumRepository.findById(id);
-    if(!mOptional.isPresent()) {
+    if (!mOptional.isPresent()) {
       responAPI.setErrorCode(ErrorCodeApi.FAILED);
       responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
       return false;
@@ -75,7 +75,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
     try {
       MainForum mainForum = mOptional.get();
-      if(file.isEmpty()) {
+      if (file.isEmpty()) {
         responAPI.setErrorMessage("File tidak boleh kosong");
         responAPI.setErrorCode(ErrorCodeApi.FAILED);
         return false;
@@ -83,7 +83,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
       try {
         String nameImage = mainForum.getNameImage();
         Path oldFile = root.resolve(nameImage);
-        Files.delete(oldFile);
+        Files.deleteIfExists(oldFile);
         Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         mainForum.setNameImage(filename);
@@ -91,13 +91,13 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
         }
-  
+
         throw new RuntimeException(e.getMessage());
       }
       mainForum.setId(id);
       mainForum.setTitle(body.getTitle());
       mainForum.setDescription(body.getDescription());
-      
+
       mainForumRepository.save(mainForum);
 
       responAPI.setData(mapToMainResponse(mainForum));
@@ -116,7 +116,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
   public boolean deleteMainForum(Long id, ResponAPI<MainResponse> responAPI) {
     Optional<MainForum> mOptional = mainForumRepository.findById(id);
-    if(!mOptional.isPresent()) {
+    if (!mOptional.isPresent()) {
       responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
       responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
       return false;
@@ -124,7 +124,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
     try {
       MainForum mainForum = mOptional.get();
-      if(!mainForum.getSubForums().isEmpty()) {
+      if (!mainForum.getSubForums().isEmpty()) {
         responAPI.setData(null);
         responAPI.setErrorCode(ErrorCodeApi.FAILED);
         responAPI.setErrorMessage("Maaf didalam main forum tidak kosong");
@@ -132,7 +132,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
         String nameImage = mainForum.getNameImage();
         Path file = root.resolve(nameImage);
         try {
-        Files.delete(file);
+          Files.delete(file);
         } catch (Exception e) {
           e.printStackTrace();
           return false;
@@ -150,7 +150,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
   public boolean getMainForumById(ResponAPI<DtoResListMain> responAPI, Long id) {
     Optional<MainForum> optionalMain = mainForumRepository.findById(id);
-    if(!optionalMain.isPresent()) {
+    if (!optionalMain.isPresent()) {
       responAPI.setErrorMessage("Data tidak ditemukan!");
       return false;
     }
@@ -166,5 +166,5 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
   private MainResponse mapToMainResponse(MainForum mainForum) {
     return objectMapper.map(mainForum, MainResponse.class);
   }
-  
+
 }
