@@ -5,11 +5,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
@@ -40,9 +43,9 @@ public class MainForumController {
 
   //Create Main Forum
   @PostMapping("/create")
-  public ResponseEntity<ResponAPI<MainResponse>> createMainForum(@RequestBody MainRequest body) {
+  public ResponseEntity<ResponAPI<MainResponse>> createMainForum(@ModelAttribute MainRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
-    if(!mainService.createMainForum(body, responAPI)) {
+    if(!mainService.createMainForum(body, file, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
     return ResponseEntity.ok(responAPI);
@@ -50,9 +53,9 @@ public class MainForumController {
 
   //Edit Main Forum
   @PostMapping("/{id}")
-  public ResponseEntity<ResponAPI<MainResponse>> updateMainForum(@PathVariable Long id, @RequestBody MainRequest body) {
+  public ResponseEntity<ResponAPI<MainResponse>> updateMainForum(@PathVariable Long id, @ModelAttribute MainRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
-    if(!mainService.updateMainForum(body, id, responAPI)) {
+    if(!mainService.updateMainForum(body,file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
     return ResponseEntity.ok(responAPI);

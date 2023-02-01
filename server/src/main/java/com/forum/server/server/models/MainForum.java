@@ -8,8 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
-
-import org.hibernate.annotations.GenericGenerator;
+import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,14 +22,19 @@ import lombok.Setter;
 @AllArgsConstructor
 public class MainForum {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
-  @GenericGenerator(name = "native", strategy = "native")
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
+  @NotNull(message = "Title cannot be null")
   private String title;
 
+  @NotNull(message = "Image cannot be null")
+  private String nameImage;
+
   @Column(columnDefinition = "TEXT")
+  @NotNull(message = "Description cannot be null")
   private String description;
 
   @OneToMany(mappedBy = "mainForum")
   private List<SubForum> subForums;
+
 }

@@ -14,18 +14,26 @@ import com.forum.server.server.dto.request.CommentRequest;
 import com.forum.server.server.dto.response.CommentResponse;
 import com.forum.server.server.models.Comment;
 import com.forum.server.server.repository.CommentRepository;
-
+import com.forum.server.server.repository.ThreadRepository;
+import com.forum.server.server.models.Thread;
 import javax.validation.ValidationException;
 
 @Service
 public class CommentService {
+  @Autowired
+  private ThreadRepository threadRepository;
+
   @Autowired
   private CommentRepository commentRepository;
   private ModelMapper objectMapper = new ModelMapper();
 
   public boolean createComment(CommentRequest body, ResponAPI<CommentResponse> responAPI) {
     try {
-      Comment comment = objectMapper.map(body, Comment.class);
+      Thread threads = findThreadId(body.getThreadId());
+
+      Comment comment = new Comment();
+      comment.setContent(body.getContent());
+      comment.setThread(threads);
       commentRepository.save(comment);
   
       responAPI.setData(mapToCommentResponse(comment));
@@ -39,6 +47,11 @@ public class CommentService {
       return false;
     }
     return true;
+  }
+
+  private Thread findThreadId(Long threadId) {
+    Optional<Thread> forum = threadRepository.findById(threadId);
+    return forum.isPresent() ? forum.get() : null;
   }
 
   public boolean deleteCommentById(Long id, ResponAPI<CommentResponse> responAPI) {

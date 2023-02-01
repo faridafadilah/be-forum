@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.forum.server.server.models.SubForum;
 
-public interface SubForumRepository<T> extends JpaRepository<SubForum, Long>, JpaSpecificationExecutor<T> {
+public interface SubForumRepository extends JpaRepository<SubForum, Long>, JpaSpecificationExecutor<SubForum> {
   
 }

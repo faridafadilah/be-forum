@@ -10,8 +10,9 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotNull;
 
-import org.hibernate.annotations.GenericGenerator;
+import com.forum.server.server.dto.request.SubRequest;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,14 +25,22 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubForum {
+  public SubForum(SubRequest body) {
+  }
+
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
-  @GenericGenerator(name = "native", strategy = "native")
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long Id;
+
+  @NotNull(message = "Judul cannot be null")
   private String judul;
 
   @Column(columnDefinition = "TEXT")
+  @NotNull(message = "Description cannot be null")
   private String description;
+  
+  @NotNull(message = "Image cannot be null")
+  private String nameImage;
 
   @ManyToOne
   @JoinColumn(name = "main_id")

@@ -10,8 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
-
-import org.hibernate.annotations.GenericGenerator;
+import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -25,13 +24,17 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Thread {
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO, generator = "native")
-  @GenericGenerator(name = "native", strategy = "native")
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @NotNull(message = "Title cannot be null")
   private String title;
 
+  @NotNull(message = "Image cannot be null")
+  private String nameImage;
+
   @Column(columnDefinition = "TEXT")
+  @NotNull(message = "Content cannot be null")
   private String content;
 
   @ManyToOne
