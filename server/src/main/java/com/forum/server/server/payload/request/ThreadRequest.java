@@ -1,6 +1,7 @@
-package com.forum.server.server.dto.request;
+package com.forum.server.server.payload.request;
 
-import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,9 +13,11 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CommentRequest {
-  @NotBlank
+public class ThreadRequest {
+  @NotNull
+  private String title;
+  @NotNull
   private String content;
-  @NotBlank
-  private Long threadId;
+  @NotNull
+  private Long subforumId;
 }

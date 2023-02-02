@@ -1,9 +1,6 @@
-package com.forum.server.server.dto.request;
+package com.forum.server.server.payload.request;
 
 import javax.validation.constraints.NotBlank;
-
-import org.springframework.web.multipart.MultipartFile;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,12 +9,14 @@ import lombok.ToString;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 @ToString
-@NoArgsConstructor
-public class MainRequest {
+public class SubRequest {
   @NotBlank
-  private String title;
+  private String judul;
   @NotBlank
   private String description;
+  @NotBlank
+  private Long mainforumId;
 }

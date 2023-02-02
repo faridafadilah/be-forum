@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -16,13 +17,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.forum.server.server.base.BaseResponsePage;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
-import com.forum.server.server.dto.request.MainRequest;
-import com.forum.server.server.dto.response.DtoResListMain;
-import com.forum.server.server.dto.response.MainResponse;
+import com.forum.server.server.payload.request.MainRequest;
+import com.forum.server.server.payload.response.DtoResListMain;
+import com.forum.server.server.payload.response.MainResponse;
 import com.forum.server.server.service.MainService;
 
 
@@ -34,7 +34,7 @@ public class MainForumController {
 
   //Get All Main Forum
   @GetMapping("/")
-  public ResponseEntity<ResponAPI<BaseResponsePage>> getAllMainForum(
+  public ResponseEntity<ResponAPI<Page<DtoResListMain>>> getAllMainForum(
     @RequestParam(value = "search", required = false) String search,
     @RequestParam(value = "page", required = false) Integer page,
     @RequestParam(value = "limit", required = false) Integer limit,
@@ -42,15 +42,10 @@ public class MainForumController {
     @RequestParam(value = "descending", required = false) Boolean desc
   ) {
     Page<DtoResListMain> mainNotPending = mainService.getAllMainForum(search, page, limit, sortBy, desc);
-    ResponAPI<BaseResponsePage> responAPI = new ResponAPI<>();
-    BaseResponsePage<List<DtoResListMain>> basePage = new BaseResponsePage<>();
-    basePage.setContent(mainNotPending.toList());
-    basePage.setCurrentPage(mainNotPending.getPageable().getPageNumber());
-    basePage.setTotalPage(mainNotPending.getPageable().getPageSize());
-    basePage.setTotalElement(mainNotPending.getTotalElements());
+    ResponAPI<Page<DtoResListMain>> responAPI = new ResponAPI<>();
     responAPI.setErrorMessage(MessageApi.SUCCESS);
     responAPI.setErrorCode(ErrorCode.SUCCESS);
-    responAPI.setData(basePage);
+    responAPI.setData(mainNotPending);
     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
   }
 
@@ -69,6 +64,7 @@ public class MainForumController {
 
   //Create Main Forum
   @PostMapping("/create")
+  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<MainResponse>> createMainForum(@ModelAttribute MainRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
     if(!mainService.createMainForum(body, file, responAPI)) {
@@ -79,6 +75,7 @@ public class MainForumController {
 
   //Edit Main Forum
   @PostMapping("/{id}")
+  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<MainResponse>> updateMainForum(@PathVariable Long id, @ModelAttribute MainRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
     if(!mainService.updateMainForum(body,file, id, responAPI)) {
@@ -89,6 +86,7 @@ public class MainForumController {
 
   //Delete Main Forum
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<MainResponse>> deleteMainForum(@PathVariable Long id) {
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
     if(!mainService.deleteMainForum(id, responAPI)) {

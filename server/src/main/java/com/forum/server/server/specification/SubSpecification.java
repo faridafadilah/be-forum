@@ -13,6 +13,6 @@ public class SubSpecification extends BaseSpecification<SubForum> {
   @Override
 	public Specification<SubForum> containsTextInOmni(String text) {
 		return containsTextInAttributes(text,
-				Arrays.asList("description", "transactionNumber", "transactionType", "platform"));
+				Arrays.asList("description", "judul"));
 	}
 }

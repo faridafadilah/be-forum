@@ -1,4 +1,4 @@
-package com.forum.server.server.dto.response;
+package com.forum.server.server.payload.response;
 
 import java.util.ArrayList;
 import java.util.List;

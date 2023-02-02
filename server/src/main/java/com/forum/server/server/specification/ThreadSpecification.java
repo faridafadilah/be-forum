@@ -13,6 +13,6 @@ public class ThreadSpecification extends BaseSpecification<Thread> {
 	@Override
 	public Specification<Thread> containsTextInOmni(String text) {
 		return containsTextInAttributes(text,
-				Arrays.asList("description", "transactionNumber", "transactionType", "platform"));
+				Arrays.asList("content", "title"));
 	}
 }

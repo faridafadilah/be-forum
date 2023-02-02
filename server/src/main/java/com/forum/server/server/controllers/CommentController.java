@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,8 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
-import com.forum.server.server.dto.request.CommentRequest;
-import com.forum.server.server.dto.response.CommentResponse;
+import com.forum.server.server.payload.request.CommentRequest;
+import com.forum.server.server.payload.response.CommentResponse;
 import com.forum.server.server.service.CommentService;
 
 @RestController
@@ -47,6 +48,7 @@ public class CommentController {
 
   //Create Comment
   @PostMapping("/create")
+  @PreAuthorize("hasRole('USER') or hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<CommentResponse>> createComment(@RequestBody CommentRequest body) {
     ResponAPI<CommentResponse> responAPI = new ResponAPI<>();
     if(!commentService.createComment(body, responAPI)) {
@@ -58,6 +60,7 @@ public class CommentController {
   //Delete Comment
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('USER') or hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<CommentResponse>> deleteComment(@PathVariable("id") Long id) {
     ResponAPI<CommentResponse> responAPI = new ResponAPI<>();
 

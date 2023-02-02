@@ -1,32 +1,30 @@
-package com.forum.server.server.dto.response;
-
-import lombok.Getter;
-import lombok.Setter;
+package com.forum.server.server.payload.response;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import com.forum.server.server.models.Comment;
 import com.forum.server.server.models.Thread;
+import java.util.List;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
-public class DtoResListThread {
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+public class CommentResponse {
   private Long id;
-  private String title;
   private String content;
-  private String nameImage;
-  public List<CommentResponse> comments;
+  private Long threadId;
 
-  public static DtoResListThread getInstance(Thread thread) {
-    DtoResListThread dto = new DtoResListThread();
+  public static List<CommentResponse> getInstance(Thread thread) {
     if(thread != null) {
       try {
-        dto.setId(thread.getId());
-        dto.setTitle(thread.getTitle());
-        dto.setContent(thread.getContent());
-        dto.setNameImage(thread.getNameImage());
-        
         List<CommentResponse> comments = new ArrayList<>();
         if(thread.getComments() != null) {
           if(!thread.getComments().isEmpty()) {
@@ -39,8 +37,7 @@ public class DtoResListThread {
             }
           }
         }
-        dto.setComments(comments);
-        return dto;
+        return comments;
       } catch (Exception e) {
         e.printStackTrace();
       }

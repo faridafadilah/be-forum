@@ -18,13 +18,14 @@ import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.ErrorCodeApi;
 import com.forum.server.server.constant.MessageApi;
-import com.forum.server.server.dto.request.CommentRequest;
-import com.forum.server.server.dto.response.CommentResponse;
 import com.forum.server.server.models.Comment;
 import com.forum.server.server.repository.CommentRepository;
 import com.forum.server.server.repository.ThreadRepository;
 import com.forum.server.server.specification.CommentSpecification;
 import com.forum.server.server.models.Thread;
+import com.forum.server.server.payload.request.CommentRequest;
+import com.forum.server.server.payload.response.CommentResponse;
+
 import javax.validation.ValidationException;
 
 @Service

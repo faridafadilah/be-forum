@@ -13,6 +13,6 @@ public class CommentSpecification extends BaseSpecification<Comment> {
   @Override
 	public Specification<Comment> containsTextInOmni(String text) {
 		return containsTextInAttributes(text,
-				Arrays.asList("description", "transactionNumber", "transactionType", "platform"));
+				Arrays.asList("content"));
 	}
 }

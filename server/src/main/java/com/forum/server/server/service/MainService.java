@@ -20,10 +20,10 @@ import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.ErrorCodeApi;
 import com.forum.server.server.constant.MessageApi;
-import com.forum.server.server.dto.request.MainRequest;
-import com.forum.server.server.dto.response.DtoResListMain;
-import com.forum.server.server.dto.response.MainResponse;
 import com.forum.server.server.models.MainForum;
+import com.forum.server.server.payload.request.MainRequest;
+import com.forum.server.server.payload.response.DtoResListMain;
+import com.forum.server.server.payload.response.MainResponse;
 import com.forum.server.server.repository.MainForumRepository;
 import com.forum.server.server.specification.MainSpecification;
 
