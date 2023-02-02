@@ -10,7 +10,7 @@ import com.forum.server.server.models.Thread;
 
 @Component
 public class ThreadSpecification extends BaseSpecification<Thread> {
-  @Override
+	@Override
 	public Specification<Thread> containsTextInOmni(String text) {
 		return containsTextInAttributes(text,
 				Arrays.asList("description", "transactionNumber", "transactionType", "platform"));

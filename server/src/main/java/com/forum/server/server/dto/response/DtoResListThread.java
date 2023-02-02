@@ -15,6 +15,7 @@ public class DtoResListThread {
   private Long id;
   private String title;
   private String content;
+  private String nameImage;
   public List<CommentResponse> comments;
 
   public static DtoResListThread getInstance(Thread thread) {
@@ -24,6 +25,7 @@ public class DtoResListThread {
         dto.setId(thread.getId());
         dto.setTitle(thread.getTitle());
         dto.setContent(thread.getContent());
+        dto.setNameImage(thread.getNameImage());
         
         List<CommentResponse> comments = new ArrayList<>();
         if(thread.getComments() != null) {
@@ -37,7 +39,7 @@ public class DtoResListThread {
             }
           }
         }
-        dto.setComments(comments);;
+        dto.setComments(comments);
         return dto;
       } catch (Exception e) {
         e.printStackTrace();

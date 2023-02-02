@@ -1,14 +1,16 @@
 package com.forum.server.server.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,12 +23,35 @@ import com.forum.server.server.dto.request.SubRequest;
 import com.forum.server.server.dto.response.DtoResListSub;
 import com.forum.server.server.dto.response.SubResponse;
 import com.forum.server.server.service.SubService;
+import com.forum.server.server.base.BaseResponsePage;
 
 @RestController
 @RequestMapping("/api/sub")
 public class SubForumController {
   @Autowired
   private SubService subService;
+
+  //Get ALl
+  @GetMapping("/")
+  public ResponseEntity<ResponAPI<BaseResponsePage>> getAllSurvey(
+      @RequestParam(value = "search", required = false) String search,
+      @RequestParam(value = "page", required = false) Integer page,
+      @RequestParam(value = "limit", required = false) Integer limit,
+      @RequestParam(value = "sortBy", required = false) List<String>sortBy,
+      @RequestParam(value = "descending", required = false) Boolean desc) {
+    Page<DtoResListSub> subNotPending = subService.getAllSub(search, page, limit, sortBy, desc);
+    ResponAPI<BaseResponsePage> responAPI = new ResponAPI<>();
+    BaseResponsePage<List<DtoResListSub>> basePage = new BaseResponsePage<>();
+    basePage.setContent(subNotPending.toList());
+    basePage.setCurrentPage(subNotPending.getPageable().getPageNumber());
+    basePage.setTotalPage(subNotPending.getPageable().getPageSize());
+    basePage.setTotalElement(subNotPending.getTotalElements());
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    responAPI.setErrorCode(ErrorCode.SUCCESS);
+    responAPI.setData(basePage);
+    System.out.println(basePage);
+    return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+  }
 
   //Get By Id
   @GetMapping("/{id}")

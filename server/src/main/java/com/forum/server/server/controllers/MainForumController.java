@@ -1,6 +1,9 @@
 package com.forum.server.server.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -8,12 +11,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.forum.server.server.base.BaseResponsePage;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
@@ -28,6 +31,29 @@ import com.forum.server.server.service.MainService;
 public class MainForumController {
   @Autowired
   private MainService mainService;
+
+  //Get All Main Forum
+  @GetMapping("/")
+  public ResponseEntity<ResponAPI<BaseResponsePage>> getAllMainForum(
+    @RequestParam(value = "search", required = false) String search,
+    @RequestParam(value = "page", required = false) Integer page,
+    @RequestParam(value = "limit", required = false) Integer limit,
+    @RequestParam(value = "sortBy", required = false) List<String>sortBy,
+    @RequestParam(value = "descending", required = false) Boolean desc
+  ) {
+    Page<DtoResListMain> mainNotPending = mainService.getAllMainForum(search, page, limit, sortBy, desc);
+    ResponAPI<BaseResponsePage> responAPI = new ResponAPI<>();
+    BaseResponsePage<List<DtoResListMain>> basePage = new BaseResponsePage<>();
+    basePage.setContent(mainNotPending.toList());
+    basePage.setCurrentPage(mainNotPending.getPageable().getPageNumber());
+    basePage.setTotalPage(mainNotPending.getPageable().getPageSize());
+    basePage.setTotalElement(mainNotPending.getTotalElements());
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    responAPI.setErrorCode(ErrorCode.SUCCESS);
+    responAPI.setData(basePage);
+    return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+  }
+
 
   //Get Main Forum By Id
   @GetMapping("/{id}")

@@ -15,6 +15,7 @@ public class DtoResListSub {
   private Long id;
   private String judul;
   private String description;
+  private String nameImage;
   public List<ThreadResponse> threads;
 
   public static DtoResListSub getInstance(SubForum subForum) {
@@ -24,6 +25,7 @@ public class DtoResListSub {
         dto.setId(subForum.getId());
         dto.setJudul(subForum.getJudul());
         dto.setDescription(subForum.getDescription());
+        dto.setNameImage(subForum.getNameImage());
         
         List<ThreadResponse> threads = new ArrayList<>();
         if(subForum.getThreads() != null) {
@@ -33,6 +35,7 @@ public class DtoResListSub {
               threadResponse.setId(thread.getId());
               threadResponse.setTitle(thread.getTitle());
               threadResponse.setContent(thread.getContent());
+              threadResponse.setNameImage(thread.getNameImage());
               threadResponse.setSubforumId(subForum.getId());
               threads.add(threadResponse);
             }

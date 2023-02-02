@@ -4,10 +4,13 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.*;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +32,9 @@ import javax.validation.ValidationException;
 @Service
 public class MainService implements BasePageInterface<MainForum, MainSpecification, MainResponse, Long> {
   private final Path root = Paths.get("./imageMain");
+
+  @Autowired
+  private MainSpecification specification;
 
   @Autowired
   private MainForumRepository mainForumRepository;
@@ -165,6 +171,22 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
   private MainResponse mapToMainResponse(MainForum mainForum) {
     return objectMapper.map(mainForum, MainResponse.class);
+  }
+
+  //GetAll + Pagination
+  public Page<DtoResListMain> getAllMainForum(String search, Integer page, Integer limit, List<String> sortBy,
+      Boolean desc) {
+    sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
+    desc = (desc != null) ? desc : true;
+    Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
+    Page<MainForum> settingPage = mainForumRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
+    List<MainForum> mains = settingPage.getContent();
+    List<DtoResListMain> responseList = new ArrayList<>();
+    mains.stream().forEach(a -> {
+      responseList.add(DtoResListMain.getInstance(a));
+    });
+    Page<DtoResListMain> response = new PageImpl<>(responseList, pageableRequest, settingPage.getTotalElements());
+    return response;
   }
 
 }

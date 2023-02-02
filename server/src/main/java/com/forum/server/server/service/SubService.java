@@ -4,10 +4,13 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
+import java.util.*;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.ValidationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.ErrorCodeApi;
+import com.forum.server.server.base.BasePageInterface;
 import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.dto.request.SubRequest;
 import com.forum.server.server.dto.response.DtoResListSub;
@@ -24,10 +28,14 @@ import com.forum.server.server.models.MainForum;
 import com.forum.server.server.models.SubForum;
 import com.forum.server.server.repository.MainForumRepository;
 import com.forum.server.server.repository.SubForumRepository;
+import com.forum.server.server.specification.SubSpecification;
 
 @Service
-public class SubService {
+public class SubService implements BasePageInterface<SubForum, SubSpecification, SubResponse, Long>{
   private final Path root = Paths.get("./imageSub");
+
+  @Autowired
+  private SubSpecification specification;
 
   @Autowired
   private MainForumRepository mainForumRepository;
@@ -38,16 +46,12 @@ public class SubService {
 
   public boolean createSubForum(SubRequest body, MultipartFile file, ResponAPI<SubResponse> responAPI) {
     try {
-      Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-    } catch (Exception e) {
-      if (e instanceof FileAlreadyExistsException) {
-        throw new RuntimeException("A file of that name already exists.");
-      }
-
-      throw new RuntimeException(e.getMessage());
-    }
-    try {
       MainForum mainforum = findMainForum(body.getMainforumId());
+      if(mainforum == null) {
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        responAPI.setErrorMessage("Main Forum Not Found with Id=" + body.getMainforumId());
+        return false;
+      }
 
       SubForum subForum = new SubForum();
       subForum.setJudul(body.getJudul());
@@ -56,6 +60,16 @@ public class SubService {
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
       subForum.setNameImage(filename);
       subForumRepository.save(subForum);
+
+      try {
+        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+      } catch (Exception e) {
+        if (e instanceof FileAlreadyExistsException) {
+          throw new RuntimeException("A file of that name already exists.");
+        }
+  
+        throw new RuntimeException(e.getMessage());
+      }
 
       responAPI.setData(mapToSubResponse(subForum));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
@@ -171,5 +185,20 @@ public class SubService {
 
   private SubResponse mapToSubResponse(SubForum subForum) {
     return objectMapper.map(subForum, SubResponse.class);
+  }
+
+  public Page<DtoResListSub> getAllSub(String search, Integer page, Integer limit, List<String> sortBy,
+      Boolean desc) {
+    sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
+    desc = (desc != null) ? desc : true;
+    Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
+    Page<SubForum> settingPage = subForumRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
+    List<SubForum> subs = settingPage.getContent();
+    List<DtoResListSub> responseList = new ArrayList<>();
+    subs.stream().forEach(a -> {
+      responseList.add(DtoResListSub.getInstance(a));
+    });
+    Page<DtoResListSub> response = new PageImpl<>(responseList, pageableRequest, settingPage.getTotalElements());
+    return response;
   }
 }

@@ -12,8 +12,6 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotNull;
 
-import com.forum.server.server.dto.request.SubRequest;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,12 +23,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SubForum {
-  public SubForum(SubRequest body) {
-  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long Id;
+  private Long id;
 
   @NotNull(message = "Judul cannot be null")
   private String judul;

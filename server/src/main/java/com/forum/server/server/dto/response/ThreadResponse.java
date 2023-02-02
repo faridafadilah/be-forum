@@ -21,6 +21,7 @@ public class ThreadResponse {
   private Long id;
   private String title;
   private String content;
+  private String nameImage;
   private Long subforumId;
 
   public static List<ThreadResponse> getInstance(SubForum subForum) {
@@ -34,6 +35,7 @@ public class ThreadResponse {
               threadResponse.setId(thread.getId());
               threadResponse.setTitle(thread.getTitle());
               threadResponse.setContent(thread.getContent());
+              threadResponse.setNameImage(thread.getNameImage());
               threadResponse.setSubforumId(subForum.getId());
               threads.add(threadResponse);
             }

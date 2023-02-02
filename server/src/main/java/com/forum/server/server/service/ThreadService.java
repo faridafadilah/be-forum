@@ -4,14 +4,21 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.forum.server.server.base.BasePageInterface;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.ErrorCodeApi;
@@ -23,12 +30,16 @@ import com.forum.server.server.models.SubForum;
 import com.forum.server.server.models.Thread;
 import com.forum.server.server.repository.SubForumRepository;
 import com.forum.server.server.repository.ThreadRepository;
+import com.forum.server.server.specification.ThreadSpecification;
 
 import javax.validation.ValidationException;
 
 @Service
-public class ThreadService {
+public class ThreadService implements BasePageInterface<Thread, ThreadSpecification, ThreadResponse, Long> {
   private final Path root = Paths.get("./imageThread");
+
+  @Autowired
+  private ThreadSpecification specification;
 
   @Autowired
   private SubForumRepository subForumRepository;
@@ -61,17 +72,12 @@ public class ThreadService {
 
   public boolean createThread(ThreadRequest body, MultipartFile file, ResponAPI<ThreadResponse> responAPI) {
     try {
-      Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-    } catch (Exception e) {
-      if (e instanceof FileAlreadyExistsException) {
-        throw new RuntimeException("A file of that name already exists.");
-      }
-
-      throw new RuntimeException(e.getMessage());
-    }
-
-    try {
       SubForum subForum = findSubForum(body.getSubforumId());
+      if(subForum == null) {
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        responAPI.setErrorMessage("Sub Forum Not Found with Id= " + body.getSubforumId());
+        return false;
+      }
 
       Thread thread = new Thread();
       thread.setTitle(body.getTitle());
@@ -80,6 +86,16 @@ public class ThreadService {
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
       thread.setNameImage(filename);
       threadRepository.save(thread);
+
+      try {
+        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+      } catch (Exception e) {
+        if (e instanceof FileAlreadyExistsException) {
+          throw new RuntimeException("A file of that name already exists.");
+        }
+  
+        throw new RuntimeException(e.getMessage());
+      }
 
       responAPI.setData(mapToThreadResponse(thread));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
@@ -172,7 +188,22 @@ public class ThreadService {
   }
 
   private ThreadResponse mapToThreadResponse(Thread thread) {
-    return objectMapper.map(thread, null);
+    return objectMapper.map(thread, ThreadResponse.class);
+  }
+
+  public Page<DtoResListThread> getAllThread(String search, Integer page, Integer limit, List<String> sortBy,
+      Boolean desc) {
+    sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
+    desc = (desc != null) ? desc : true;
+    Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
+    Page<Thread> setting = threadRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
+    List<Thread> thread = setting.getContent();
+    List<DtoResListThread> response = new ArrayList<>();
+    thread.stream().forEach(a -> {
+      response.add(DtoResListThread.getInstance(a));
+    });
+    Page<DtoResListThread> responseList = new PageImpl<>(response, pageableRequest, setting.getTotalElements());
+    return responseList;
   }
 
 }
