@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
@@ -32,6 +33,7 @@ public class Thread {
 
   @NotNull(message = "Image cannot be null")
   private String nameImage;
+  private String urlImage;
 
   @Column(columnDefinition = "TEXT")
   @NotNull(message = "Content cannot be null")
@@ -43,4 +45,8 @@ public class Thread {
 
   @OneToMany(mappedBy = "thread")
   private List<Comment> comments;
+
+  @ManyToOne
+  @JoinColumn(name = "user_id")
+  private User users;
 }

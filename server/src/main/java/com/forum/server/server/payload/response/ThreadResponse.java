@@ -22,7 +22,12 @@ public class ThreadResponse {
   private String title;
   private String content;
   private String nameImage;
+  private String urlImage;
   private Long subforumId;
+  private Long userId;
+  private String username;
+  private String image;
+  private String urlUser;
 
   public static List<ThreadResponse> getInstance(SubForum subForum) {
     if(subForum != null) {
@@ -36,7 +41,12 @@ public class ThreadResponse {
               threadResponse.setTitle(thread.getTitle());
               threadResponse.setContent(thread.getContent());
               threadResponse.setNameImage(thread.getNameImage());
+              threadResponse.setUrlImage(thread.getUrlImage());
               threadResponse.setSubforumId(subForum.getId());
+              threadResponse.setUserId(thread.getUsers().getId());
+              threadResponse.setUsername(thread.getUsers().getUsername());
+              threadResponse.setImage(thread.getUsers().getImage());
+              threadResponse.setUrlUser(thread.getUsers().getUrlImage());
               threads.add(threadResponse);
             }
           }

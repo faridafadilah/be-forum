@@ -1,5 +1,7 @@
 package com.forum.server.server.models;
 
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -31,4 +33,8 @@ public class Comment {
   @ManyToOne
   @JoinColumn(name = "thread_id")
   private Thread thread;
+
+  @ManyToOne
+  @JoinColumn(name = "user_id")
+  private User users;
 }

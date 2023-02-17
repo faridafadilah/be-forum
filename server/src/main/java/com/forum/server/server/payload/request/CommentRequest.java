@@ -17,4 +17,6 @@ public class CommentRequest {
   private String content;
   @NotBlank
   private Long threadId;
+  @NotBlank
+  private Long userId;
 }

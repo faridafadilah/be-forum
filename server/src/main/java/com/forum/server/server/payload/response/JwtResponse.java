@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class JwtResponse {
-  private String token;
+  private String accessToken;
   private String type = "Bearer";
   private String refreshToken;
   private Long id;
@@ -17,7 +17,7 @@ public class JwtResponse {
   private List<String> roles;
 
   public JwtResponse(String accessToken, String refreshToken, Long id, String username, String email, List<String> roles) {
-    this.token = accessToken;
+    this.accessToken = accessToken;
     this.refreshToken = refreshToken;
     this.id = id;
     this.username = username;

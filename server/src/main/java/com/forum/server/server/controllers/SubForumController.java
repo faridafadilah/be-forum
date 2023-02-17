@@ -1,12 +1,10 @@
 package com.forum.server.server.controllers;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -17,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.forum.server.server.base.BaseModel;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
@@ -25,25 +24,24 @@ import com.forum.server.server.payload.response.DtoResListSub;
 import com.forum.server.server.payload.response.SubResponse;
 import com.forum.server.server.service.SubService;
 
+@CrossOrigin(origins = "http://10.10.102.48:8081")
 @RestController
 @RequestMapping("/api/sub")
-public class SubForumController {
+public class SubForumController extends BaseModel {
   @Autowired
   private SubService subService;
 
-  //Get ALl
-  @GetMapping("/")
-  public ResponseEntity<ResponAPI<Page<DtoResListSub>>> getAllSurvey(
-      @RequestParam(value = "search", required = false) String search,
-      @RequestParam(value = "page", required = false) Integer page,
-      @RequestParam(value = "limit", required = false) Integer limit,
-      @RequestParam(value = "sortBy", required = false) List<String>sortBy,
-      @RequestParam(value = "descending", required = false) Boolean desc) {
-    Page<DtoResListSub> subNotPending = subService.getAllSub(search, page, limit, sortBy, desc);
+  @GetMapping("")
+  public ResponseEntity<ResponAPI<Page<DtoResListSub>>> getAll(
+    @RequestParam(name = "page", defaultValue = "0") int page,
+    @RequestParam(name = "limit", defaultValue = "5") int limit,
+    @RequestParam(name = "mainforumId", required = true) Long id 
+  ) {
+    Page<DtoResListSub> data = subService.getAll(page, limit, id);
     ResponAPI<Page<DtoResListSub>> responAPI = new ResponAPI<>();
-    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    responAPI.setData(data);
     responAPI.setErrorCode(ErrorCode.SUCCESS);
-    responAPI.setData(subNotPending);
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
   }
 
@@ -61,7 +59,6 @@ public class SubForumController {
 
   // Add Sub Forum
   @PostMapping("/create")
-  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<SubResponse>> createSubForum(@ModelAttribute SubRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<SubResponse> responAPI = new ResponAPI<>();
     if(!subService.createSubForum(body, file, responAPI)) {
@@ -72,7 +69,6 @@ public class SubForumController {
 
   //Edit Sub Forum
   @PostMapping("/{id}")
-  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<SubResponse>> updateSubForum(@PathVariable Long id, @ModelAttribute SubRequest body, @RequestParam("file") MultipartFile file) {
     ResponAPI<SubResponse> responAPI = new ResponAPI<>();
     if(!subService.updateSubForum(body, file, id, responAPI)) {
@@ -83,7 +79,6 @@ public class SubForumController {
 
   //Delete Sub Forum
   @DeleteMapping("/{id}")
-  @PreAuthorize("hasRole('SUPER_ADMIN') or hasRole('ADMIN')")
   public ResponseEntity<ResponAPI<SubResponse>> deleteSubForum(@PathVariable("id") Long id) {
     ResponAPI<SubResponse> responAPI = new ResponAPI<>();
     if(!subService.deleteSubForum(id, responAPI)) {

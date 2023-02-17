@@ -21,23 +21,21 @@ public class CommentResponse {
   private Long id;
   private String content;
   private Long threadId;
+  private Long userId;
+  private String username;
+  private String imageUser;
 
-  public static List<CommentResponse> getInstance(Thread thread) {
-    if(thread != null) {
+  public static CommentResponse getInstance(Comment comment) {
+    CommentResponse dto = new CommentResponse();
+    if(dto != null) {
       try {
-        List<CommentResponse> comments = new ArrayList<>();
-        if(thread.getComments() != null) {
-          if(!thread.getComments().isEmpty()) {
-            for(Comment comment : thread.getComments()) {
-              CommentResponse commentResponse = new CommentResponse();
-              commentResponse.setId(comment.getId());
-              commentResponse.setContent(comment.getContent());
-              commentResponse.setThreadId(thread.getId());
-              comments.add(commentResponse);
-            }
-          }
-        }
-        return comments;
+        dto.setId(comment.getId());
+        dto.setContent(comment.getContent());
+        dto.setThreadId(comment.getThread().getId());
+        dto.setUserId(comment.getUsers().getId());
+        dto.setUsername(comment.getUsers().getUsername());
+        dto.setImageUser(comment.getUsers().getImage());
+        return dto;
       } catch (Exception e) {
         e.printStackTrace();
       }

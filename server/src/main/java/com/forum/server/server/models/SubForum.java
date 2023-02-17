@@ -10,6 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.metamodel.SingularAttribute;
 import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
@@ -37,6 +38,7 @@ public class SubForum {
   
   @NotNull(message = "Image cannot be null")
   private String nameImage;
+  private String urlImage;
 
   @ManyToOne
   @JoinColumn(name = "main_id")

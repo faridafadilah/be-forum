@@ -8,6 +8,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.metamodel.SingularAttribute;
 import javax.validation.constraints.NotNull;
 
 import lombok.AllArgsConstructor;
@@ -29,6 +30,8 @@ public class MainForum {
 
   @NotNull(message = "Image cannot be null")
   private String nameImage;
+  
+  private String urlImage;
 
   @Column(columnDefinition = "TEXT")
   @NotNull(message = "Description cannot be null")

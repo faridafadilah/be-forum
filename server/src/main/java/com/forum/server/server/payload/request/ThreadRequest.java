@@ -20,4 +20,6 @@ public class ThreadRequest {
   private String content;
   @NotNull
   private Long subforumId;
+  @NotNull
+  private Long userId;
 }

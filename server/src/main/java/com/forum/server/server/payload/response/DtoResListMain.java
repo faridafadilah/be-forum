@@ -16,6 +16,7 @@ public class DtoResListMain {
   private String title;
   private String description;
   private String nameImage;
+  private String urlImage;
   public List<SubResponse> subForums;
 
   public static DtoResListMain getInstance(MainForum mainForum) {
@@ -26,6 +27,7 @@ public class DtoResListMain {
         dto.setTitle(mainForum.getTitle());
         dto.setDescription(mainForum.getDescription());
         dto.setNameImage(mainForum.getNameImage());
+        dto.setUrlImage(mainForum.getUrlImage());
         
         List<SubResponse> subForums = new ArrayList<>();
         if(mainForum.getSubForums() != null) {
@@ -36,6 +38,7 @@ public class DtoResListMain {
               subResponse.setJudul(subForum.getJudul());
               subResponse.setDescription(subForum.getDescription());
               subResponse.setNameImage(subForum.getNameImage());
+              subResponse.setUrlImage(subForum.getUrlImage());
               subResponse.setMainForumId(mainForum.getId());
               subForums.add(subResponse);
             }

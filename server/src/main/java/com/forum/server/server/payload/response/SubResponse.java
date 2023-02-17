@@ -22,6 +22,7 @@ public class SubResponse {
   private String judul;
   private String description;
   private String nameImage;
+  private String urlImage;
   private Long mainForumId;
 
   public static List<SubResponse> getInstance(MainForum mainForum) {
@@ -36,6 +37,7 @@ public class SubResponse {
               subResponse.setJudul(subForum.getJudul());
               subResponse.setDescription(subForum.getDescription());
               subResponse.setNameImage(subForum.getNameImage());
+              subResponse.setUrlImage(subForum.getUrlImage());
               subResponse.setMainForumId(mainForum.getId());
               subForums.add(subResponse);
             }

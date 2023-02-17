@@ -16,7 +16,13 @@ public class DtoResListThread {
   private String title;
   private String content;
   private String nameImage;
+  private String urlImage;
+  private Long subforumId;
   public List<CommentResponse> comments;
+  private Long userId;
+  private String username;
+  private String image;
+  private String urlUser;
 
   public static DtoResListThread getInstance(Thread thread) {
     DtoResListThread dto = new DtoResListThread();
@@ -26,6 +32,9 @@ public class DtoResListThread {
         dto.setTitle(thread.getTitle());
         dto.setContent(thread.getContent());
         dto.setNameImage(thread.getNameImage());
+        dto.setUrlImage(thread.getUrlImage());
+        dto.setUrlUser(thread.getUsers().getUrlImage());
+        dto.setSubforumId(thread.getSubForum().getId());
         
         List<CommentResponse> comments = new ArrayList<>();
         if(thread.getComments() != null) {
@@ -35,10 +44,17 @@ public class DtoResListThread {
               commentResponse.setId(comment.getId());
               commentResponse.setContent(comment.getContent());
               commentResponse.setThreadId(thread.getId());
+              commentResponse.setUserId(comment.getUsers().getId());
+              commentResponse.setUsername(comment.getUsers().getUsername());
+              commentResponse.setImageUser(comment.getUsers().getImage());
               comments.add(commentResponse);
             }
           }
         }
+
+        dto.setUserId(thread.getUsers().getId());
+        dto.setUsername(thread.getUsers().getUsername());
+        dto.setImage(thread.getUsers().getImage());
         dto.setComments(comments);
         return dto;
       } catch (Exception e) {

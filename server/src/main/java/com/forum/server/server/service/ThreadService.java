@@ -8,16 +8,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forum.server.server.base.BasePageInterface;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
@@ -25,17 +29,19 @@ import com.forum.server.server.constant.ErrorCodeApi;
 import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.models.SubForum;
 import com.forum.server.server.models.Thread;
+import com.forum.server.server.models.User;
 import com.forum.server.server.payload.request.ThreadRequest;
 import com.forum.server.server.payload.response.DtoResListThread;
 import com.forum.server.server.payload.response.ThreadResponse;
 import com.forum.server.server.repository.SubForumRepository;
 import com.forum.server.server.repository.ThreadRepository;
+import com.forum.server.server.repository.UserRepository;
 import com.forum.server.server.specification.ThreadSpecification;
 
 import javax.validation.ValidationException;
 
 @Service
-public class ThreadService implements BasePageInterface<Thread, ThreadSpecification, ThreadResponse, Long> {
+public class ThreadService {
   private final Path root = Paths.get("./imageThread");
 
   @Autowired
@@ -47,7 +53,12 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
   @Autowired
   private ThreadRepository threadRepository;
 
+  @Autowired
+  private UserRepository userRepository;
+
   private ModelMapper objectMapper = new ModelMapper();
+
+  private String url = "http://10.10.102.48:8080/imageThread/";
 
   public boolean getThreadById(ResponAPI<DtoResListThread> responAPI, Long id) {
     Optional<Thread> optionalThread = threadRepository.findById(id);
@@ -70,12 +81,24 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
     return forum.isPresent() ? forum.get() : null;
   }
 
+  private User findUserId(Long userId) {
+    Optional<User> user = userRepository.findById(userId);
+    return user.isPresent() ? user.get() : null;
+  }
+
   public boolean createThread(ThreadRequest body, MultipartFile file, ResponAPI<ThreadResponse> responAPI) {
     try {
       SubForum subForum = findSubForum(body.getSubforumId());
-      if(subForum == null) {
+      if (subForum == null) {
         responAPI.setErrorCode(ErrorCodeApi.FAILED);
         responAPI.setErrorMessage("Sub Forum Not Found with Id= " + body.getSubforumId());
+        return false;
+      }
+
+      User users = findUserId(body.getUserId());
+      if (users == null) {
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        responAPI.setErrorMessage("User Not Found!");
         return false;
       }
 
@@ -85,6 +108,8 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
       thread.setSubForum(subForum);
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
       thread.setNameImage(filename);
+      thread.setUrlImage(url+filename);
+      thread.setUsers(users);
       threadRepository.save(thread);
 
       try {
@@ -93,11 +118,11 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
         }
-  
+
         throw new RuntimeException(e.getMessage());
       }
 
-      responAPI.setData(mapToThreadResponse(thread));
+      responAPI.setData(null);
       responAPI.setErrorCode(ErrorCode.SUCCESS);
       responAPI.setErrorMessage(MessageApi.SUCCESS);
     } catch (ValidationException e) {
@@ -131,6 +156,7 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
         Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         thread.setNameImage(filename);
+        thread.setUrlImage(url+filename);
       } catch (Exception e) {
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
@@ -191,19 +217,45 @@ public class ThreadService implements BasePageInterface<Thread, ThreadSpecificat
     return objectMapper.map(thread, ThreadResponse.class);
   }
 
-  public Page<DtoResListThread> getAllThread(String search, Integer page, Integer limit, List<String> sortBy,
-      Boolean desc) {
-    sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
-    desc = (desc != null) ? desc : true;
-    Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
-    Page<Thread> setting = threadRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
-    List<Thread> thread = setting.getContent();
-    List<DtoResListThread> response = new ArrayList<>();
-    thread.stream().forEach(a -> {
-      response.add(DtoResListThread.getInstance(a));
-    });
-    Page<DtoResListThread> responseList = new PageImpl<>(response, pageableRequest, setting.getTotalElements());
-    return responseList;
+  public Page<DtoResListThread> getAll(int page, int limit, Long id) {
+    Pageable pageable = PageRequest.of(page, limit);
+    Page<Thread> settinPage = threadRepository.findAll(specification.subEqual(id), pageable);
+    List<DtoResListThread> response = settinPage.getContent().stream().map(DtoResListThread::getInstance)
+    .collect(Collectors.toList());
+    return new PageImpl<>(response, pageable, settinPage.getTotalElements());
   }
+
+  public Page<DtoResListThread> getByUserId(int page, int limit, Long id) {
+    Pageable pageable = PageRequest.of(page, limit);
+    Page<Thread> settinPage = threadRepository.findAll(specification.userEqual(id), pageable);
+    List<DtoResListThread> response = settinPage.getContent().stream().map(DtoResListThread::getInstance)
+    .collect(Collectors.toList());
+    return new PageImpl<>(response, pageable, settinPage.getTotalElements());
+  }
+
+  // public Page<DtoResListThread> getAllThread(String search, Integer page, Integer limit, List<String> sortBy,
+  //     Boolean desc) {
+  //   sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
+  //   desc = (desc != null) ? desc : true;
+  //   Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
+  //   Page<Thread> setting = threadRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
+  //   List<Thread> thread = setting.getContent();
+  //   List<DtoResListThread> response = new ArrayList<>();
+  //   thread.stream().forEach(a -> {
+  //     response.add(DtoResListThread.getInstance(a));
+  //   });
+  //   Page<DtoResListThread> responseList = new PageImpl<>(response, pageableRequest, setting.getTotalElements());
+  //   return responseList;
+  // }
+
+  // public Page<DtoResListThread> getAllByIdUser(int page, int limit, long id) {
+  //   Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
+  //   Page<Thread> settingPage = threadRepository
+  //       .findAll(specification.userEqual(id), pageable);
+  //   List<DtoResListThread> response = settingPage.getContent().stream().map(a -> DtoResListThread.getInstance(a))
+  //       .collect(Collectors.toList());
+  //   PageImpl<DtoResListThread> responsePage = new PageImpl<>(response, pageable, settingPage.getTotalElements());
+  //   return responsePage;
+  // }
 
 }

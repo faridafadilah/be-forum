@@ -1,6 +1,8 @@
 package com.forum.server.server.models;
 
+import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.persistence.Entity;
@@ -11,6 +13,7 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.Email;
@@ -58,4 +61,20 @@ public class User {
     this.password = password;
   }
 
+  private String image;
+  private String urlImage;
+  private String bio;
+  private String github;
+  private String whatsapp;
+  private String linkedin;
+  private String gender;
+  private String address;
+  private String hobies;
+  private String birth;
+
+  @OneToMany(mappedBy = "users")
+  private List<Thread> threads;
+
+  @OneToMany(mappedBy = "users")
+  private List<Comment> comments;
 }

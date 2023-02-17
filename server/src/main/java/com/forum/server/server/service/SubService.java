@@ -5,11 +5,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.modelmapper.ValidationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,7 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.ErrorCodeApi;
-import com.forum.server.server.base.BasePageInterface;
 import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.models.MainForum;
 import com.forum.server.server.models.SubForum;
@@ -31,8 +32,9 @@ import com.forum.server.server.repository.SubForumRepository;
 import com.forum.server.server.specification.SubSpecification;
 
 @Service
-public class SubService implements BasePageInterface<SubForum, SubSpecification, SubResponse, Long>{
+public class SubService{
   private final Path root = Paths.get("./imageSub");
+  private String url = "http://10.10.102.48:8080/imageSub/";
 
   @Autowired
   private SubSpecification specification;
@@ -59,6 +61,7 @@ public class SubService implements BasePageInterface<SubForum, SubSpecification,
       subForum.setMainForum(mainforum);
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
       subForum.setNameImage(filename);
+      subForum.setUrlImage(url+filename);
       subForumRepository.save(subForum);
 
       try {
@@ -111,6 +114,7 @@ public class SubService implements BasePageInterface<SubForum, SubSpecification,
         Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         subForum.setNameImage(filename);
+        subForum.setUrlImage(url+filename);
       } catch (Exception e) {
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
@@ -187,18 +191,11 @@ public class SubService implements BasePageInterface<SubForum, SubSpecification,
     return objectMapper.map(subForum, SubResponse.class);
   }
 
-  public Page<DtoResListSub> getAllSub(String search, Integer page, Integer limit, List<String> sortBy,
-      Boolean desc) {
-    sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
-    desc = (desc != null) ? desc : true;
-    Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
-    Page<SubForum> settingPage = subForumRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
-    List<SubForum> subs = settingPage.getContent();
-    List<DtoResListSub> responseList = new ArrayList<>();
-    subs.stream().forEach(a -> {
-      responseList.add(DtoResListSub.getInstance(a));
-    });
-    Page<DtoResListSub> response = new PageImpl<>(responseList, pageableRequest, settingPage.getTotalElements());
-    return response;
+  public Page<DtoResListSub> getAll(int page, int limit, Long id) {
+    Pageable pageable = PageRequest.of(page, limit);
+    Page<SubForum> settinPage = subForumRepository.findAll(specification.mainEqual(id), pageable);
+    List<DtoResListSub> response = settinPage.getContent().stream().map(DtoResListSub::getInstance)
+    .collect(Collectors.toList());
+    return new PageImpl<>(response, pageable, settinPage.getTotalElements());
   }
 }

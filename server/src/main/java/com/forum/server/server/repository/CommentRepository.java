@@ -5,6 +5,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import com.forum.server.server.models.Comment;
 
-public interface CommentRepository<T> extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<T> {
+public interface CommentRepository extends JpaRepository<Comment, Long>, JpaSpecificationExecutor<Comment> {
   
 }

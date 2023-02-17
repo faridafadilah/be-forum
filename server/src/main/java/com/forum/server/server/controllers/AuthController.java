@@ -38,7 +38,7 @@ import com.forum.server.server.security.jwt.JwtUtils;
 import com.forum.server.server.security.services.RefreshTokenService;
 import com.forum.server.server.security.services.UserDetailslmpl;
 
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins = "http://10.10.102.48:8081")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
