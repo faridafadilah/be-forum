@@ -21,6 +21,8 @@ public class DtoResListThread {
   public List<CommentResponse> comments;
   private Long userId;
   private String username;
+  private int liked;
+  private int view;
   private String image;
   private String urlUser;
 
@@ -35,6 +37,8 @@ public class DtoResListThread {
         dto.setUrlImage(thread.getUrlImage());
         dto.setUrlUser(thread.getUsers().getUrlImage());
         dto.setSubforumId(thread.getSubForum().getId());
+        dto.setView(thread.getView());
+        dto.setLiked(thread.getLiked());
         
         List<CommentResponse> comments = new ArrayList<>();
         if(thread.getComments() != null) {

@@ -28,6 +28,8 @@ public class ThreadResponse {
   private String username;
   private String image;
   private String urlUser;
+  private int liked;
+  private int view;
 
   public static List<ThreadResponse> getInstance(SubForum subForum) {
     if(subForum != null) {
@@ -47,6 +49,8 @@ public class ThreadResponse {
               threadResponse.setUsername(thread.getUsers().getUsername());
               threadResponse.setImage(thread.getUsers().getImage());
               threadResponse.setUrlUser(thread.getUsers().getUrlImage());
+              threadResponse.setLiked(thread.getLiked());
+              threadResponse.setView(thread.getView());
               threads.add(threadResponse);
             }
           }

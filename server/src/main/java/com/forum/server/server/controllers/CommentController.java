@@ -26,7 +26,8 @@ import com.forum.server.server.payload.request.CommentRequest;
 import com.forum.server.server.payload.response.CommentResponse;
 import com.forum.server.server.service.CommentService;
 
-@CrossOrigin(origins = "http://10.10.102.48:8081")
+@CrossOrigin(origins = "http://10.10.102.97:8081")
+// @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/comment")
 public class CommentController extends BaseModel {

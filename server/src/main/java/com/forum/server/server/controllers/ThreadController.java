@@ -25,10 +25,13 @@ import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.payload.request.ThreadRequest;
 import com.forum.server.server.payload.response.DtoResListThread;
+import com.forum.server.server.payload.response.LikeResponse;
 import com.forum.server.server.payload.response.ThreadResponse;
 import com.forum.server.server.service.ThreadService;
+import com.forum.server.server.models.UserLike;
 
-@CrossOrigin(origins = "http://10.10.102.48:8081")
+@CrossOrigin(origins = "http://10.10.102.97:8081")
+// @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/thread")
 public class ThreadController extends BaseModel {
@@ -108,7 +111,7 @@ public class ThreadController extends BaseModel {
   // Create Thread
   @PostMapping("/create")
   public ResponseEntity<ResponAPI<ThreadResponse>> createThread(@ModelAttribute ThreadRequest body,
-      @RequestParam("file") MultipartFile file) {
+      @RequestParam(value = "file", required = false) MultipartFile file) {
     ResponAPI<ThreadResponse> responAPI = new ResponAPI<>();
     if (!threadService.createThread(body, file, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
@@ -135,6 +138,38 @@ public class ThreadController extends BaseModel {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
     }
     return ResponseEntity.ok(responAPI);
+  }
+
+  @PostMapping("like/{id}")
+  public ResponseEntity<ResponAPI<ThreadResponse>> addLikeThread(@PathVariable("id") Long id, @RequestParam("userId") Long userId) {
+    ResponAPI<ThreadResponse> responAPI = new ResponAPI<>();
+
+    if (!threadService.addLikeThreadById(id, responAPI, userId)) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
+    }
+    return ResponseEntity.ok(responAPI);
+  }
+
+  @DeleteMapping("unlike/{id}")
+  public ResponseEntity<ResponAPI<ThreadResponse>> unLikeThread(@PathVariable("id") Long id, @RequestParam("userId") Long userId) {
+    ResponAPI<ThreadResponse> responAPI = new ResponAPI<>();
+
+    if (!threadService.unLikeThreadById(id, responAPI, userId)) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
+    }
+    return ResponseEntity.ok(responAPI);
+  }
+
+  //Get like By userId
+  @GetMapping("like/user/{id}")
+  public ResponseEntity<ResponAPI<LikeResponse>> getLikeByUser(@PathVariable("id") Long id) {
+    ResponAPI<LikeResponse> responAPI = new ResponAPI<>();
+    if (!threadService.getLikeByUser(responAPI, id)) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
+    }
+    responAPI.setErrorCode(ErrorCode.SUCCESS);
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    return ResponseEntity.status(HttpStatus.OK).body(responAPI);
   }
 
 }

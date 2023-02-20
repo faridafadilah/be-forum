@@ -34,7 +34,7 @@ import com.forum.server.server.specification.SubSpecification;
 @Service
 public class SubService{
   private final Path root = Paths.get("./imageSub");
-  private String url = "http://10.10.102.48:8080/imageSub/";
+  private String url = "http://10.10.102.97:8080/imageSub/";
 
   @Autowired
   private SubSpecification specification;

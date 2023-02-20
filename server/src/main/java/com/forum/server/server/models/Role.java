@@ -15,7 +15,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name="roles")
+@Table(name = "roles")
 public class Role {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,10 +26,14 @@ public class Role {
   private ERole name;
 
   public Role(ERole name) {
-		this.name = name;
-	}
+    this.name = name;
+  }
 
   public Role() {
   }
-}
 
+  public Role(String name) {
+    this.name = ERole.valueOf(name);
+  }
+
+}

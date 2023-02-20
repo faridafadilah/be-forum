@@ -10,7 +10,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,7 +34,7 @@ import javax.validation.ValidationException;
 @Service
 public class MainService implements BasePageInterface<MainForum, MainSpecification, MainResponse, Long> {
   private final Path root = Paths.get("./imageMain");
-  private String url = "http://10.10.102.48:8080/imageMain/";
+  private String url = "http://10.10.102.97:8080/imageMain/";
 
   @Autowired
   private MainSpecification specification;
@@ -56,7 +58,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
       MainForum mainForum = objectMapper.map(body, MainForum.class);
       String filename = StringUtils.cleanPath(file.getOriginalFilename());
       mainForum.setNameImage(filename);
-      mainForum.setUrlImage(url+filename);
+      mainForum.setUrlImage(url + filename);
       mainForumRepository.save(mainForum);
 
       responAPI.setData(mapToMainResponse(mainForum));
@@ -95,7 +97,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
         Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         mainForum.setNameImage(filename);
-        mainForum.setUrlImage(url+filename);
+        mainForum.setUrlImage(url + filename);
       } catch (Exception e) {
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
@@ -176,7 +178,7 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
     return objectMapper.map(mainForum, MainResponse.class);
   }
 
-  //GetAll + Pagination
+  // GetAll + Pagination
   public Page<DtoResListMain> getAllMainForum(String search, Integer page, Integer limit, List<String> sortBy,
       Boolean desc) {
     sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");

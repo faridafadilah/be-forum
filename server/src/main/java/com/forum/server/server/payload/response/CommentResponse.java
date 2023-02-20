@@ -24,6 +24,7 @@ public class CommentResponse {
   private Long userId;
   private String username;
   private String imageUser;
+  private String urlUser;
 
   public static CommentResponse getInstance(Comment comment) {
     CommentResponse dto = new CommentResponse();
@@ -35,6 +36,7 @@ public class CommentResponse {
         dto.setUserId(comment.getUsers().getId());
         dto.setUsername(comment.getUsers().getUsername());
         dto.setImageUser(comment.getUsers().getImage());
+        dto.setUrlUser(comment.getUsers().getUrlImage());
         return dto;
       } catch (Exception e) {
         e.printStackTrace();

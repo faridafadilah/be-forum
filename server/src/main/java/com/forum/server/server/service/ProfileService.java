@@ -1,9 +1,11 @@
 package com.forum.server.server.service;
 
+import java.io.InputStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 import org.modelmapper.ModelMapper;
@@ -25,7 +27,7 @@ import com.forum.server.server.repository.UserRepository;
 @Service
 public class ProfileService {
   private final Path root = Paths.get("./imageUser");
-  private String url = "http://10.10.102.48:8080/imageUser/";
+  private String url = "http://10.10.102.97:8080/imageUser/";
 
   private ModelMapper objectMapper = new ModelMapper();
 
@@ -49,64 +51,53 @@ public class ProfileService {
 
   public boolean updateProfileById(Long id, ProfileRequest body, MultipartFile file, ResponAPI<DtoResProfile> responAPI) {
     Optional<User> uOptional = userRepository.findById(id);
-    if(!uOptional.isPresent()) {
-      responAPI.setErrorCode(ErrorCodeApi.FAILED);
-      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
-      return false;
+    if (!uOptional.isPresent()) {
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+        return false;
     }
-    System.out.println(file.isEmpty());
-    try {
-      User user = uOptional.get();
-      String userImage = user.getImage();
-      user.setId(id);
-      user.setUsername(body.getUsername());
-      user.setEmail(body.getEmail());
-      user.setBio(body.getBio());
-      user.setGithub(body.getGithub());
-      user.setWhatsapp(body.getWhatsapp());
-      user.setLinkedin(body.getLinkedin());
-      user.setGender(body.getGender());
-      user.setAddress(body.getAddress());
-      user.setHobies(body.getHobies());
-      user.setBirth(body.getBirth());
 
-        if(userImage == null) {
-          try {
-            Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+    try {
+        User user = uOptional.get();
+        String userImage = user.getImage();
+        user.setId(id);
+        user.setUsername(body.getUsername());
+        user.setEmail(body.getEmail());
+        user.setBio(body.getBio());
+        user.setGithub(body.getGithub());
+        user.setWhatsapp(body.getWhatsapp());
+        user.setLinkedin(body.getLinkedin());
+        user.setGender(body.getGender());
+        user.setAddress(body.getAddress());
+        user.setHobies(body.getHobies());
+        user.setBirth(body.getBirth());
+
+        if (file != null && !file.isEmpty()) {
             String fileImage = StringUtils.cleanPath(file.getOriginalFilename());
-            user.setUrlImage(url+fileImage);
+            try (InputStream inputStream = file.getInputStream()) {
+                Files.copy(inputStream, this.root.resolve(fileImage), StandardCopyOption.REPLACE_EXISTING);
+            } catch (FileAlreadyExistsException e) {
+                throw new RuntimeException("A file of that name already exists.");
+            }
+            if (userImage != null) {
+                Path oldFile = root.resolve(userImage);
+                Files.deleteIfExists(oldFile);
+            }
+            user.setUrlImage(url + fileImage);
             user.setImage(fileImage);
-          } catch (Exception e) {
-            if (e instanceof FileAlreadyExistsException) {
-              throw new RuntimeException("A file of that name already exists.");
-            }
-          }
-        } else {
-          try {
-            String nameImage = user.getImage();
-            Path oldFile = root.resolve(nameImage);
-            Files.deleteIfExists(oldFile);
-            Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-            String newFile = StringUtils.cleanPath(file.getOriginalFilename());
-            user.setUrlImage(url+newFile);
-            user.setImage(newFile);   
-          } catch (Exception e) {
-            if (e instanceof FileAlreadyExistsException) {
-              throw new RuntimeException("A file of that name already exists.");
-            }
-          }
         }
-      userRepository.save(user);
-      responAPI.setData(mapToProfileResponse(user));
-      System.out.println(mapToProfileResponse(user));
-      responAPI.setErrorCode(ErrorCode.SUCCESS);
-      responAPI.setErrorMessage(MessageApi.SUCCESS);
+
+        userRepository.save(user);
+        responAPI.setData(mapToProfileResponse(user));
+        responAPI.setErrorCode(ErrorCode.SUCCESS);
+        responAPI.setErrorMessage(MessageApi.SUCCESS);
+        return true;
+
     } catch (Exception e) {
-      responAPI.setErrorCode(ErrorCodeApi.FAILED);
-      responAPI.setErrorMessage(e.getMessage());
-      return false;
+        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+        responAPI.setErrorMessage(e.getMessage());
+        return false;
     }
-    return true;
   }
 
   private DtoResProfile mapToProfileResponse(User user) {

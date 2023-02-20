@@ -32,7 +32,8 @@ import com.forum.server.server.payload.response.MainResponse;
 import com.forum.server.server.service.MainService;
 import com.forum.server.server.specification.MainSpecification;
 
-@CrossOrigin(origins = "http://10.10.102.48:8081")
+@CrossOrigin(origins = "http://10.10.102.97:8081")
+// @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/main")
 public class MainForumController extends BaseModel {
@@ -45,20 +46,37 @@ public class MainForumController extends BaseModel {
   //Get All Main Forum
   @GetMapping("")
   public ResponseEntity<ResponAPI<Page<DtoResListMain>>> getAllMainForum(
-  @RequestParam(value = "search_query", required = false) String search,
-  @RequestParam(value = "page", required = false) Integer page,
-  @RequestParam(value = "limit", required = false) Integer limit,
-  @RequestParam(value = "sortBy", required = false) List<String>sortBy,
-  @RequestParam(value = "descending", required = false) Boolean desc
+      @RequestParam(value = "search_query", required = false) String search,
+      @RequestParam(value = "page", required = false) Integer page,
+      @RequestParam(value = "limit", required = false) Integer limit,
+      @RequestParam(value = "sortBy", required = false) List<String>sortBy,
+      @RequestParam(value = "descending", required = false) Boolean desc
   ) {
-  Page<DtoResListMain> mainNotPending = mainService.getAllMainForum(search,
-  page, limit, sortBy, desc);
-  ResponAPI<Page<DtoResListMain>> responAPI = new ResponAPI<>();
-  responAPI.setErrorMessage(MessageApi.SUCCESS);
-  responAPI.setErrorCode(ErrorCode.SUCCESS);
-  responAPI.setData(mainNotPending);
-  return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+    Page<DtoResListMain> mainNotPending = mainService.getAllMainForum(search,
+    page, limit, sortBy, desc);
+    ResponAPI<Page<DtoResListMain>> responAPI = new ResponAPI<>();
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    responAPI.setErrorCode(ErrorCode.SUCCESS);
+    responAPI.setData(mainNotPending);
+    return ResponseEntity.status(HttpStatus.OK).body(responAPI);
   }
+
+  //Get All Main Forum
+  // @GetMapping("")
+  // public ResponseEntity<ResponAPI<Page<DtoResListMain>>> getAllMainForum(
+  //     @RequestParam(value = "search_query", required = false) String search,
+  //     @RequestParam(value="page", defaultValue = "0") int page,
+  //     @RequestParam(value= "limit" ,defaultValue = "6") int limit,
+  //     @RequestParam(value = "sortBy", required = false) List<String>sortBy,
+  //     @RequestParam(value = "descending", required = false) Boolean desc
+  // ) {
+  //   Page<DtoResListMain> mainNotPending = mainService.getAllMainForum(search, limit, page, sortBy, desc);
+  //   ResponAPI<Page<DtoResListMain>> responAPI = new ResponAPI<>();
+  //   responAPI.setErrorMessage(MessageApi.SUCCESS);
+  //   responAPI.setErrorCode(ErrorCode.SUCCESS);
+  //   responAPI.setData(mainNotPending);
+  //   return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+  // }
 
   // @GetMapping
   // public ResponseEntity<Map<String, Object>> findAll(

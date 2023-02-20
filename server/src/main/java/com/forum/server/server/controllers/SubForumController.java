@@ -24,7 +24,8 @@ import com.forum.server.server.payload.response.DtoResListSub;
 import com.forum.server.server.payload.response.SubResponse;
 import com.forum.server.server.service.SubService;
 
-@CrossOrigin(origins = "http://10.10.102.48:8081")
+@CrossOrigin(origins = "http://10.10.102.97:8081")
+// @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/sub")
 public class SubForumController extends BaseModel {

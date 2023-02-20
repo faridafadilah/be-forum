@@ -30,12 +30,12 @@ import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.models.SubForum;
 import com.forum.server.server.models.Thread;
 import com.forum.server.server.models.User;
+import com.forum.server.server.models.UserLike;
 import com.forum.server.server.payload.request.ThreadRequest;
 import com.forum.server.server.payload.response.DtoResListThread;
+import com.forum.server.server.payload.response.LikeResponse;
 import com.forum.server.server.payload.response.ThreadResponse;
-import com.forum.server.server.repository.SubForumRepository;
-import com.forum.server.server.repository.ThreadRepository;
-import com.forum.server.server.repository.UserRepository;
+import com.forum.server.server.repository.*;
 import com.forum.server.server.specification.ThreadSpecification;
 
 import javax.validation.ValidationException;
@@ -56,11 +56,15 @@ public class ThreadService {
   @Autowired
   private UserRepository userRepository;
 
+  @Autowired
+  private UserLikeRepository likeRepository;
+
   private ModelMapper objectMapper = new ModelMapper();
 
-  private String url = "http://10.10.102.48:8080/imageThread/";
+  private String url = "http://10.10.102.97:8080/imageThread/";
 
   public boolean getThreadById(ResponAPI<DtoResListThread> responAPI, Long id) {
+    addView(id);
     Optional<Thread> optionalThread = threadRepository.findById(id);
     if (!optionalThread.isPresent()) {
       responAPI.setErrorMessage("Data tidak ditemukan!");
@@ -69,6 +73,30 @@ public class ThreadService {
 
     try {
       DtoResListThread response = DtoResListThread.getInstance(optionalThread.get());
+      responAPI.setData(response);
+    } catch (Exception e) {
+      responAPI.setErrorMessage(e.getMessage());
+    }
+    return true;
+  }
+
+  public boolean getLikeByUser(ResponAPI<LikeResponse> responAPI, Long id) {
+    Optional<User> uOptional = userRepository.findById(id);
+    if (!uOptional.isPresent()) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
+    }
+    User user = uOptional.get();
+
+    Optional<UserLike> optionalLike = likeRepository.findByUser(user);
+    if (!optionalLike.isPresent()) {
+      responAPI.setErrorMessage("Data tidak ditemukan!");
+      return false;
+    }
+
+    try {
+      LikeResponse response = LikeResponse.getInstance(optionalLike.get());
       responAPI.setData(response);
     } catch (Exception e) {
       responAPI.setErrorMessage(e.getMessage());
@@ -103,24 +131,27 @@ public class ThreadService {
       }
 
       Thread thread = new Thread();
+      if(file != null) {
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        thread.setNameImage(filename);
+        thread.setUrlImage(url + filename);
+        try {
+          Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
+        } catch (Exception e) {
+          if (e instanceof FileAlreadyExistsException) {
+            throw new RuntimeException("A file of that name already exists.");
+          }
+  
+          throw new RuntimeException(e.getMessage());
+        }
+      }
+
       thread.setTitle(body.getTitle());
       thread.setContent(body.getContent());
       thread.setSubForum(subForum);
-      String filename = StringUtils.cleanPath(file.getOriginalFilename());
-      thread.setNameImage(filename);
-      thread.setUrlImage(url+filename);
       thread.setUsers(users);
+      thread.setLiked(thread.getLiked());
       threadRepository.save(thread);
-
-      try {
-        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-      } catch (Exception e) {
-        if (e instanceof FileAlreadyExistsException) {
-          throw new RuntimeException("A file of that name already exists.");
-        }
-
-        throw new RuntimeException(e.getMessage());
-      }
 
       responAPI.setData(null);
       responAPI.setErrorCode(ErrorCode.SUCCESS);
@@ -156,7 +187,7 @@ public class ThreadService {
         Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
         String filename = StringUtils.cleanPath(file.getOriginalFilename());
         thread.setNameImage(filename);
-        thread.setUrlImage(url+filename);
+        thread.setUrlImage(url + filename);
       } catch (Exception e) {
         if (e instanceof FileAlreadyExistsException) {
           throw new RuntimeException("A file of that name already exists.");
@@ -221,7 +252,7 @@ public class ThreadService {
     Pageable pageable = PageRequest.of(page, limit);
     Page<Thread> settinPage = threadRepository.findAll(specification.subEqual(id), pageable);
     List<DtoResListThread> response = settinPage.getContent().stream().map(DtoResListThread::getInstance)
-    .collect(Collectors.toList());
+        .collect(Collectors.toList());
     return new PageImpl<>(response, pageable, settinPage.getTotalElements());
   }
 
@@ -229,33 +260,135 @@ public class ThreadService {
     Pageable pageable = PageRequest.of(page, limit);
     Page<Thread> settinPage = threadRepository.findAll(specification.userEqual(id), pageable);
     List<DtoResListThread> response = settinPage.getContent().stream().map(DtoResListThread::getInstance)
-    .collect(Collectors.toList());
+        .collect(Collectors.toList());
     return new PageImpl<>(response, pageable, settinPage.getTotalElements());
   }
 
-  // public Page<DtoResListThread> getAllThread(String search, Integer page, Integer limit, List<String> sortBy,
-  //     Boolean desc) {
-  //   sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
-  //   desc = (desc != null) ? desc : true;
-  //   Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy, desc);
-  //   Page<Thread> setting = threadRepository.findAll(this.defaultSpec(search, specification), pageableRequest);
-  //   List<Thread> thread = setting.getContent();
-  //   List<DtoResListThread> response = new ArrayList<>();
-  //   thread.stream().forEach(a -> {
-  //     response.add(DtoResListThread.getInstance(a));
-  //   });
-  //   Page<DtoResListThread> responseList = new PageImpl<>(response, pageableRequest, setting.getTotalElements());
-  //   return responseList;
+  // public Page<DtoResListThread> getAllThread(String search, Integer page,
+  // Integer limit, List<String> sortBy,
+  // Boolean desc) {
+  // sortBy = (sortBy != null) ? sortBy : Arrays.asList("id");
+  // desc = (desc != null) ? desc : true;
+  // Pageable pageableRequest = this.defaultPage(search, page, limit, sortBy,
+  // desc);
+  // Page<Thread> setting = threadRepository.findAll(this.defaultSpec(search,
+  // specification), pageableRequest);
+  // List<Thread> thread = setting.getContent();
+  // List<DtoResListThread> response = new ArrayList<>();
+  // thread.stream().forEach(a -> {
+  // response.add(DtoResListThread.getInstance(a));
+  // });
+  // Page<DtoResListThread> responseList = new PageImpl<>(response,
+  // pageableRequest, setting.getTotalElements());
+  // return responseList;
   // }
 
   // public Page<DtoResListThread> getAllByIdUser(int page, int limit, long id) {
-  //   Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "id"));
-  //   Page<Thread> settingPage = threadRepository
-  //       .findAll(specification.userEqual(id), pageable);
-  //   List<DtoResListThread> response = settingPage.getContent().stream().map(a -> DtoResListThread.getInstance(a))
-  //       .collect(Collectors.toList());
-  //   PageImpl<DtoResListThread> responsePage = new PageImpl<>(response, pageable, settingPage.getTotalElements());
-  //   return responsePage;
+  // Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC,
+  // "id"));
+  // Page<Thread> settingPage = threadRepository
+  // .findAll(specification.userEqual(id), pageable);
+  // List<DtoResListThread> response = settingPage.getContent().stream().map(a ->
+  // DtoResListThread.getInstance(a))
+  // .collect(Collectors.toList());
+  // PageImpl<DtoResListThread> responsePage = new PageImpl<>(response, pageable,
+  // settingPage.getTotalElements());
+  // return responsePage;
   // }
+
+  // Menambahkan jumlah view pada thread
+  public void addView(Long id) {
+    Optional<Thread> optionalThread = threadRepository.findById(id);
+    if (optionalThread.isPresent()) {
+      Thread thread = optionalThread.get();
+      thread.setView(thread.getView() + 1);
+      threadRepository.save(thread);
+    }
+  }
+
+  public boolean addLikeThreadById(Long id, ResponAPI<ThreadResponse> responAPI, Long userId) {
+    Optional<Thread> tOptional = threadRepository.findById(id);
+    if (!tOptional.isPresent()) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
+    }
+
+    Optional<User> uOptional = userRepository.findById(userId);
+    if (!uOptional.isPresent()) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
+    }
+
+    try {
+      Thread thread = tOptional.get();
+      User user = uOptional.get();
+      Optional<UserLike> likeOptional = likeRepository.findByThreadAndUser(thread, user);
+      if (likeOptional.isPresent()) {
+        responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+        responAPI.setErrorMessage("You already liked this thread");
+        return false;
+      }
+
+      UserLike like = new UserLike();
+      like.setThread(thread);
+      like.setUser(user);
+      likeRepository.save(like);
+
+      thread.setLiked(thread.getLiked() + 1);
+      threadRepository.save(thread);
+
+      responAPI.setData(null);
+      responAPI.setErrorCode(ErrorCode.SUCCESS);
+      responAPI.setErrorMessage(MessageApi.SUCCESS);
+    } catch (Exception e) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(e.getMessage());
+      return false;
+    }
+    return true;
+  }
+
+  public boolean unLikeThreadById(Long id, ResponAPI<ThreadResponse> responAPI, Long userId) {
+    Optional<Thread> tOptional = threadRepository.findById(id);
+    if (!tOptional.isPresent()) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
+    }
+
+    Optional<User> uOptional = userRepository.findById(userId);
+    if (!uOptional.isPresent()) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
+    }
+
+    try {
+      Thread thread = tOptional.get();
+      User user = uOptional.get();
+      Optional<UserLike> likeOptional = likeRepository.findByThreadAndUser(thread, user);
+      if (!likeOptional.isPresent()) {
+        responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+        responAPI.setErrorMessage("You not like");
+        return false;
+      }
+
+      UserLike userLike = likeOptional.get();
+      likeRepository.delete(userLike);
+      thread.setLiked(thread.getLiked() - 1);
+      threadRepository.save(thread);
+
+      responAPI.setData(null);
+      responAPI.setErrorCode(ErrorCode.SUCCESS);
+      responAPI.setErrorMessage(MessageApi.SUCCESS);
+    } catch (Exception e) {
+      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+      responAPI.setErrorMessage(e.getMessage());
+      return false;
+    }
+    return true;
+  }
 
 }

@@ -27,7 +27,8 @@ import com.forum.server.server.service.ProfileService;
 
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
-@CrossOrigin(origins = "http://10.10.102.48:8081")
+@CrossOrigin(origins = "http://10.10.102.97:8081")
+// @CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/")
 public class ProfileController {
@@ -50,7 +51,7 @@ public class ProfileController {
 
   @PostMapping("profile/{id}")
   public ResponseEntity<ResponAPI<DtoResProfile>> updateProfile(@PathVariable("id") Long id,
-      @ModelAttribute ProfileRequest body, @RequestParam("file") MultipartFile file) {
+      @ModelAttribute ProfileRequest body, @RequestParam(value= "file", required= false) MultipartFile file) {
     ResponAPI<DtoResProfile> responAPI = new ResponAPI<>();
     if (!profileService.updateProfileById(id, body, file, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
