@@ -28,10 +28,9 @@ import com.forum.server.server.payload.response.DtoResListThread;
 import com.forum.server.server.payload.response.LikeResponse;
 import com.forum.server.server.payload.response.ThreadResponse;
 import com.forum.server.server.service.ThreadService;
-import com.forum.server.server.models.UserLike;
 
-@CrossOrigin(origins = "http://10.10.102.97:8081")
-// @CrossOrigin(origins = "http://localhost:8081")
+// @CrossOrigin(origins = "http://10.10.102.90:8081")
+@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/thread")
 public class ThreadController extends BaseModel {
@@ -122,7 +121,7 @@ public class ThreadController extends BaseModel {
   // Edit Thread
   @PostMapping("/{id}")
   public ResponseEntity<ResponAPI<ThreadResponse>> updateThread(@PathVariable("id") Long id,
-      @ModelAttribute ThreadRequest body, @RequestParam("file") MultipartFile file) {
+      @ModelAttribute ThreadRequest body, @RequestParam(value = "file", required = false) MultipartFile file) {
     ResponAPI<ThreadResponse> responAPI = new ResponAPI<>();
     if (!threadService.updateThread(body, file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
@@ -162,14 +161,24 @@ public class ThreadController extends BaseModel {
 
   //Get like By userId
   @GetMapping("like/user/{id}")
-  public ResponseEntity<ResponAPI<LikeResponse>> getLikeByUser(@PathVariable("id") Long id) {
-    ResponAPI<LikeResponse> responAPI = new ResponAPI<>();
-    if (!threadService.getLikeByUser(responAPI, id)) {
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);
-    }
+  public ResponseEntity<ResponAPI<List<LikeResponse>>> getLikeByUser(@PathVariable("id") Long id) {
+    List<LikeResponse> data = threadService.getLikeByUserId(id);
+    ResponAPI<List<LikeResponse>> responAPI = new ResponAPI<>();
+    responAPI.setData(data);
     responAPI.setErrorCode(ErrorCode.SUCCESS);
     responAPI.setErrorMessage(MessageApi.SUCCESS);
     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
   }
+
+   //Get Populer Thread
+   @GetMapping("populer")
+   public ResponseEntity<ResponAPI<List<DtoResListThread>>> getPopulerThread() {
+     List<DtoResListThread> data = threadService.getPopularThreads();
+     ResponAPI<List<DtoResListThread>> responAPI = new ResponAPI<>();
+     responAPI.setData(data);
+     responAPI.setErrorCode(ErrorCode.SUCCESS);
+     responAPI.setErrorMessage(MessageApi.SUCCESS);
+     return ResponseEntity.status(HttpStatus.OK).body(responAPI);
+   }
 
 }

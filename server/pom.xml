@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>2.7.8</version>
+		<version>2.7.9</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.forum.server</groupId>
@@ -80,7 +80,7 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 
-		<dependency>
+		<!-- <dependency>
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger2</artifactId>
 			<version>3.0.0</version>
@@ -90,6 +90,11 @@
 			<groupId>io.springfox</groupId>
 			<artifactId>springfox-swagger-ui</artifactId>
 			<version>3.0.0</version>
+		</dependency> -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+			<version>2.5.6</version>
 		</dependency>
 
 		<dependency>
@@ -182,20 +187,20 @@
 				<artifactId>maven-processor-plugin</artifactId>
 				<version>3.3.3</version>
 				<executions>
-						<execution>
-								<id>process</id>
-								<goals>
-										<goal>process</goal>
-								</goals>
-								<phase>generate-sources</phase>
-								<configuration>
-										<processors>
-												<processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
-										</processors>
-								</configuration>
-						</execution>
+					<execution>
+						<id>process</id>
+						<goals>
+							<goal>process</goal>
+						</goals>
+						<phase>generate-sources</phase>
+						<configuration>
+							<processors>
+								<processor>org.hibernate.jpamodelgen.JPAMetaModelEntityProcessor</processor>
+							</processors>
+						</configuration>
+					</execution>
 				</executions>
-		</plugin>
+			</plugin>
 		</plugins>
 	</build>
 

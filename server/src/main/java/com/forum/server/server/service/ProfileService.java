@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCodeApi;
@@ -22,26 +23,36 @@ import com.forum.server.server.models.User;
 import com.forum.server.server.payload.request.ProfileRequest;
 import com.forum.server.server.payload.response.DtoResProfile;
 import com.forum.server.server.repository.UserRepository;
-
+import org.springframework.jdbc.core.JdbcTemplate;
+import com.forum.server.server.payload.response.DtoUserRole;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 
 @Service
 public class ProfileService {
   private final Path root = Paths.get("./imageUser");
-  private String url = "http://10.10.102.97:8080/imageUser/";
 
   private ModelMapper objectMapper = new ModelMapper();
 
   @Autowired
+  private JdbcTemplate jdbcTemplate;
+
+  @Autowired
   private UserRepository userRepository;
+
+  public void updateRole(Long roleId, Long userId) {
+    String sql = "UPDATE public.user_roles SET role_id = ? WHERE user_id = ?";
+    jdbcTemplate.update(sql, roleId, userId);
+  }
 
   public boolean getUserById(ResponAPI<DtoResProfile> responAPI, Long id) {
     Optional<User> optionalUser = userRepository.findById(id);
-    if(!optionalUser.isPresent()) {
+    if (!optionalUser.isPresent()) {
       responAPI.setErrorMessage("Data tidak ditemukan!");
       return false;
     }
     try {
-      DtoResProfile response =DtoResProfile.getInstance(optionalUser.get());
+      DtoResProfile response = DtoResProfile.getInstance(optionalUser.get());
       responAPI.setData(response);
     } catch (Exception e) {
       responAPI.setErrorMessage(e.getMessage());
@@ -49,59 +60,76 @@ public class ProfileService {
     return true;
   }
 
-  public boolean updateProfileById(Long id, ProfileRequest body, MultipartFile file, ResponAPI<DtoResProfile> responAPI) {
+  public boolean updateProfileById(Long id, ProfileRequest body, MultipartFile file,
+      ResponAPI<DtoResProfile> responAPI) {
     Optional<User> uOptional = userRepository.findById(id);
     if (!uOptional.isPresent()) {
-        responAPI.setErrorCode(ErrorCodeApi.FAILED);
-        responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
-        return false;
+      responAPI.setErrorCode(ErrorCodeApi.FAILED);
+      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
+      return false;
     }
 
     try {
-        User user = uOptional.get();
-        String userImage = user.getImage();
-        user.setId(id);
-        user.setUsername(body.getUsername());
-        user.setEmail(body.getEmail());
-        user.setBio(body.getBio());
-        user.setGithub(body.getGithub());
-        user.setWhatsapp(body.getWhatsapp());
-        user.setLinkedin(body.getLinkedin());
-        user.setGender(body.getGender());
-        user.setAddress(body.getAddress());
-        user.setHobies(body.getHobies());
-        user.setBirth(body.getBirth());
+      User user = uOptional.get();
+      String userImage = user.getImage();
+      user.setId(id);
+      user.setUsername(body.getUsername());
+      user.setEmail(body.getEmail());
+      user.setBio(body.getBio());
+      user.setGithub(body.getGithub());
+      user.setWhatsapp(body.getWhatsapp());
+      user.setLinkedin(body.getLinkedin());
+      user.setGender(body.getGender());
+      user.setAddress(body.getAddress());
+      user.setHobies(body.getHobies());
+      user.setBirth(body.getBirth());
 
-        if (file != null && !file.isEmpty()) {
-            String fileImage = StringUtils.cleanPath(file.getOriginalFilename());
-            try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, this.root.resolve(fileImage), StandardCopyOption.REPLACE_EXISTING);
-            } catch (FileAlreadyExistsException e) {
-                throw new RuntimeException("A file of that name already exists.");
-            }
-            if (userImage != null) {
-                Path oldFile = root.resolve(userImage);
-                Files.deleteIfExists(oldFile);
-            }
-            user.setUrlImage(url + fileImage);
-            user.setImage(fileImage);
+      if (file != null && !file.isEmpty()) {
+        if (userImage != null) {
+          Path oldFile = root.resolve(userImage);
+          Files.deleteIfExists(oldFile);
         }
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        String uniqueFilename = UUID.randomUUID().toString() + ext;
+        Path filePath = this.root.resolve(uniqueFilename);
+        Files.copy(file.getInputStream(), filePath);
+        String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageUser/").path(uniqueFilename)
+            .toUriString();
 
-        userRepository.save(user);
-        responAPI.setData(mapToProfileResponse(user));
-        responAPI.setErrorCode(ErrorCode.SUCCESS);
-        responAPI.setErrorMessage(MessageApi.SUCCESS);
-        return true;
+        user.setUrlImage(url);
+        user.setImage(uniqueFilename);
+      }
+
+      userRepository.save(user);
+      responAPI.setData(mapToProfileResponse(user));
+      responAPI.setErrorCode(ErrorCode.SUCCESS);
+      responAPI.setErrorMessage(MessageApi.SUCCESS);
+      return true;
 
     } catch (Exception e) {
-        responAPI.setErrorCode(ErrorCodeApi.FAILED);
-        responAPI.setErrorMessage(e.getMessage());
-        return false;
+      responAPI.setErrorCode(ErrorCodeApi.FAILED);
+      responAPI.setErrorMessage(e.getMessage());
+      return false;
     }
   }
 
   private DtoResProfile mapToProfileResponse(User user) {
     return objectMapper.map(user, DtoResProfile.class);
   }
-  
+
+  public DtoUserRole getUserRoleById(Long userId) {
+    String sql = "SELECT a.username as usernameUser, a.id as idUser, b.role_id as roleIdUser, c.name as roleUser "
+        + "FROM users a "
+        + "INNER JOIN user_roles b ON a.id = b.user_id "
+        + "INNER JOIN roles c ON b.role_id = c.id "
+        + "WHERE a.id = ? "
+        + "ORDER BY a.id";
+
+    RowMapper<DtoUserRole> rowMapper = new BeanPropertyRowMapper<>(DtoUserRole.class);
+    DtoUserRole userDto = jdbcTemplate.queryForObject(sql, rowMapper, userId);
+
+    return userDto;
+  }
+
 }

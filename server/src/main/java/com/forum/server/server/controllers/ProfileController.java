@@ -19,16 +19,13 @@ import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.constant.MessageApi;
 import com.forum.server.server.payload.request.ProfileRequest;
-import com.forum.server.server.payload.request.RoleRequest;
 import com.forum.server.server.payload.response.DtoResProfile;
 import com.forum.server.server.payload.response.DtoUserRole;
 import com.forum.server.server.repository.UserRepository;
 import com.forum.server.server.service.ProfileService;
 
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
-
-@CrossOrigin(origins = "http://10.10.102.97:8081")
-// @CrossOrigin(origins = "http://localhost:8081")
+// @CrossOrigin(origins = "http://10.10.102.90:8081")
+@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/")
 public class ProfileController {
@@ -70,17 +67,21 @@ public class ProfileController {
     return ResponseEntity.ok(responAPI);
   }
 
-  //Update Role User
-  // @PostMapping("userRole/{userId}")
-  // public ResponseEntity<ResponAPI<UserRole>> updateRoleUser(@RequestBody RoleRequest body, @PathVariable("userId") Long userId) {
-  //   ResponAPI<UserRole> responAPI = new ResponAPI<>();
-  //   System.out.println(body.getRole_id());
-  //   // UserRole user = userRoleRepository.updateRole(userId, body.getRole_id());
-  //   // responAPI.setData(user);
-  //   responAPI.setErrorCode(ErrorCode.SUCCESS);
-  //   responAPI.setErrorMessage(MessageApi.SUCCESS);
-  //   return ResponseEntity.ok(responAPI);
-  // }
+  @GetMapping("userRole/role/{userId}")
+  public ResponseEntity<ResponAPI<DtoUserRole>> getUserRoleById(@PathVariable("userId") Long userId) {
+    ResponAPI<DtoUserRole> responAPI = new ResponAPI<>();
+    DtoUserRole data = userRepository.getUserRole(userId);
+    responAPI.setData(data);
+    responAPI.setErrorCode(ErrorCode.SUCCESS);
+    responAPI.setErrorMessage(MessageApi.SUCCESS);
+    return ResponseEntity.ok(responAPI);
+  }
+
+  @PostMapping("userRole/{roleId}")
+  public void updateRole(@PathVariable("roleId") Long roleId, @RequestParam("userId") Long userId) {
+    profileService.updateRole(roleId, userId);
+  }
+
   @GetMapping("userRole/user/{id}")
   public ResponseEntity<ResponAPI<DtoResProfile>> getUser(@PathVariable("id") Long id) {
     ResponAPI<DtoResProfile> responAPI = new ResponAPI<>();

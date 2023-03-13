@@ -1,5 +1,6 @@
 package com.forum.server.server.service;
 
+import java.io.File;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -14,8 +15,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.forum.server.server.base.BasePageInterface;
 import com.forum.server.server.base.ResponAPI;
@@ -34,7 +37,6 @@ import javax.validation.ValidationException;
 @Service
 public class MainService implements BasePageInterface<MainForum, MainSpecification, MainResponse, Long> {
   private final Path root = Paths.get("./imageMain");
-  private String url = "http://10.10.102.97:8080/imageMain/";
 
   @Autowired
   private MainSpecification specification;
@@ -44,21 +46,17 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
   private ModelMapper objectMapper = new ModelMapper();
 
   public boolean createMainForum(MainRequest body, MultipartFile file, ResponAPI<MainResponse> responAPI) {
-    try {
-      Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-    } catch (Exception e) {
-      if (e instanceof FileAlreadyExistsException) {
-        throw new RuntimeException("A file of that name already exists.");
-      }
-
-      throw new RuntimeException(e.getMessage());
-    }
 
     try {
       MainForum mainForum = objectMapper.map(body, MainForum.class);
-      String filename = StringUtils.cleanPath(file.getOriginalFilename());
-      mainForum.setNameImage(filename);
-      mainForum.setUrlImage(url + filename);
+      String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+      String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+      String uniqueFilename = UUID.randomUUID().toString() + ext;
+      Path filePath = this.root.resolve(uniqueFilename);
+      Files.copy(file.getInputStream(), filePath);
+      String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageMain/").path(uniqueFilename).toUriString();
+      mainForum.setNameImage(uniqueFilename);
+      mainForum.setUrlImage(url);
       mainForumRepository.save(mainForum);
 
       responAPI.setData(mapToMainResponse(mainForum));
@@ -85,38 +83,27 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
 
     try {
       MainForum mainForum = mOptional.get();
-      if (file.isEmpty()) {
-        responAPI.setErrorMessage("File tidak boleh kosong");
-        responAPI.setErrorCode(ErrorCodeApi.FAILED);
-        return false;
-      }
-      try {
-        String nameImage = mainForum.getNameImage();
-        Path oldFile = root.resolve(nameImage);
-        Files.deleteIfExists(oldFile);
-        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
-        mainForum.setNameImage(filename);
-        mainForum.setUrlImage(url + filename);
-      } catch (Exception e) {
-        if (e instanceof FileAlreadyExistsException) {
-          throw new RuntimeException("A file of that name already exists.");
-        }
-
-        throw new RuntimeException(e.getMessage());
+      String nameImage = mainForum.getNameImage();
+      if(file != null) {
+          Path oldFile = root.resolve(nameImage);
+          Files.deleteIfExists(oldFile);
+          
+          String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+          String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+          String uniqueFilename = UUID.randomUUID().toString() + ext;
+          Path filePath = this.root.resolve(uniqueFilename);
+          Files.copy(file.getInputStream(), filePath);
+          String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageMain/").path(uniqueFilename).toUriString();
+          mainForum.setNameImage(uniqueFilename);
+          mainForum.setUrlImage(url);
       }
       mainForum.setId(id);
       mainForum.setTitle(body.getTitle());
       mainForum.setDescription(body.getDescription());
 
       mainForumRepository.save(mainForum);
-
-      responAPI.setData(mapToMainResponse(mainForum));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
       responAPI.setErrorMessage(MessageApi.SUCCESS);
-    } catch (ValidationException e) {
-      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
-      responAPI.setErrorCode(ErrorCodeApi.FAILED);
     } catch (Exception e) {
       responAPI.setErrorCode(ErrorCodeApi.FAILED);
       responAPI.setErrorMessage(e.getMessage());
@@ -159,6 +146,11 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
     return true;
   }
 
+  
+  private MainResponse mapToMainResponse(MainForum mainForum) {
+    return objectMapper.map(mainForum, MainResponse.class);
+  }
+
   public boolean getMainForumById(ResponAPI<DtoResListMain> responAPI, Long id) {
     Optional<MainForum> optionalMain = mainForumRepository.findById(id);
     if (!optionalMain.isPresent()) {
@@ -174,9 +166,6 @@ public class MainService implements BasePageInterface<MainForum, MainSpecificati
     return true;
   }
 
-  private MainResponse mapToMainResponse(MainForum mainForum) {
-    return objectMapper.map(mainForum, MainResponse.class);
-  }
 
   // GetAll + Pagination
   public Page<DtoResListMain> getAllMainForum(String search, Integer page, Integer limit, List<String> sortBy,

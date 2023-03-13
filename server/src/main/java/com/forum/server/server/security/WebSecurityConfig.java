@@ -16,17 +16,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-// import com.forum.server.server.interceptor.AdminInterceptor;
-// import com.forum.server.server.interceptor.LogoutInterceptor;
-// import com.forum.server.server.interceptor.SuperAdminInterceptor;
-// import com.forum.server.server.interceptor.UserInterceptor;
+import com.forum.server.server.interceptor.LoggingInterceptor;
 import com.forum.server.server.security.jwt.AuthEntryPointJwt;
 import com.forum.server.server.security.jwt.AuthTokenFilter;
 import com.forum.server.server.security.services.UserDetailsServiceImpl;
@@ -52,17 +46,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         .addResourceLocations("file:imageUser\\");
   }
 
-  // @Autowired
-  // private UserInterceptor userInterceptor;
-
-  // @Autowired
-  // private AdminInterceptor adminInterceptor;
-
-  // @Autowired
-  // private LogoutInterceptor logoutInterceptor;
-
-  // @Autowired
-  // private SuperAdminInterceptor superAdminInterceptor;
+  @Autowired
+  private LoggingInterceptor loggingInterceptor;
 
   @Value("${cors.allowed-origins}")
   private String allowedOrigins;
@@ -105,6 +90,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         .authorizeRequests().antMatchers("/api/main").permitAll().and()
         .authorizeRequests().antMatchers("/api/main/**").permitAll().and()
         .authorizeRequests().antMatchers("/api/sub/**").permitAll().and()
+        .authorizeRequests().antMatchers("/api/log").permitAll().and()
         .authorizeRequests().antMatchers("/api/thread/**").permitAll().and()
         .authorizeRequests().antMatchers("/api/comment/**").permitAll().and()
         .authorizeRequests().antMatchers("/api/sub").permitAll().and()
@@ -113,7 +99,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
         .authorizeRequests().antMatchers("/api/userRole/**").permitAll().and()
         .authorizeRequests().antMatchers("/api/userRole/user/**").permitAll().and()
         .authorizeRequests().antMatchers("/api/profile/**").permitAll()
-        .antMatchers("/api/test/**").permitAll()
+        .antMatchers("/swagger-ui.html", "/swagger-resources/**", "/v2/api-docs", "/webjars/**").permitAll()
         .anyRequest().authenticated();
 
     http.authenticationProvider(authenticationProvider());
@@ -121,48 +107,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
     return http.build();
   }
 
-  // @Bean
-  // public CorsConfigurationSource corsConfigurationSource() {
-  // CorsConfiguration configuration = new CorsConfiguration();
-  // configuration.setAllowedOrigins(Arrays.asList(allowedOrigins));
-  // configuration.addAllowedMethod("*");
-  // UrlBasedCorsConfigurationSource source = new
-  // UrlBasedCorsConfigurationSource();
-  // source.registerCorsConfiguration("/**", configuration);
-  // return source;
-  // }
-
-  // @Override
-  // public void addInterceptors(InterceptorRegistry registry) {
-  // WebMvcConfigurer.super.addInterceptors(registry);
-  // registry.addInterceptor(userInterceptor).addPathPatterns(
-  // "/api/comment",
-  // "/api/thread/**",
-  // "/api/comment/create",
-  // "/api/comment/**"
-  // );
-  // registry.addInterceptor(adminInterceptor).addPathPatterns(
-  // "/api/main/create",
-  // "/api/main/**",
-  // "/api/sub/create",
-  // "/api/sub/**",
-  // "/api/thread/create",
-  // "/api/thread/**",
-  // "/api/comment/create",
-  // "/api/comment/**"
-  // );
-  // registry.addInterceptor(superAdminInterceptor).addPathPatterns(
-  // "/api/main/create",
-  // "/api/main/**",
-  // "/api/sub/create",
-  // "/api/sub/**",
-  // "/api/thread/create",
-  // "/api/thread/**",
-  // "/api/comment/create",
-  // "/api/comment/**"
-  // );
-  // registry.addInterceptor(logoutInterceptor).addPathPatterns(
-  // "/api/auth/signout"
-  // );
-  // }
+  @Override
+  public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(loggingInterceptor);
+  }
 }

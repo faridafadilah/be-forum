@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.forum.server.server.base.ResponAPI;
 import com.forum.server.server.constant.ErrorCode;
@@ -34,7 +35,6 @@ import com.forum.server.server.specification.SubSpecification;
 @Service
 public class SubService{
   private final Path root = Paths.get("./imageSub");
-  private String url = "http://10.10.102.97:8080/imageSub/";
 
   @Autowired
   private SubSpecification specification;
@@ -59,20 +59,16 @@ public class SubService{
       subForum.setJudul(body.getJudul());
       subForum.setDescription(body.getDescription());
       subForum.setMainForum(mainforum);
-      String filename = StringUtils.cleanPath(file.getOriginalFilename());
-      subForum.setNameImage(filename);
-      subForum.setUrlImage(url+filename);
-      subForumRepository.save(subForum);
 
-      try {
-        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-      } catch (Exception e) {
-        if (e instanceof FileAlreadyExistsException) {
-          throw new RuntimeException("A file of that name already exists.");
-        }
-  
-        throw new RuntimeException(e.getMessage());
-      }
+      String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+      String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+      String uniqueFilename = UUID.randomUUID().toString() + ext;
+      Path filePath = this.root.resolve(uniqueFilename);
+      Files.copy(file.getInputStream(), filePath);
+      String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageSub/").path(uniqueFilename).toUriString();
+      subForum.setUrlImage(url);
+      subForum.setNameImage(uniqueFilename);
+      subForumRepository.save(subForum);
 
       responAPI.setData(mapToSubResponse(subForum));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
@@ -102,32 +98,24 @@ public class SubService{
 
     try {
       SubForum subForum = sOptional.get();
-      if (file.isEmpty()) {
-        responAPI.setErrorMessage("File tidak boleh kosong");
-        responAPI.setErrorCode(ErrorCodeApi.FAILED);
-        return false;
-      }
-      try {
+      if(file != null) {
         String nameImage = subForum.getNameImage();
         Path oldFile = root.resolve(nameImage);
         Files.deleteIfExists(oldFile);
-        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
-        subForum.setNameImage(filename);
-        subForum.setUrlImage(url+filename);
-      } catch (Exception e) {
-        if (e instanceof FileAlreadyExistsException) {
-          throw new RuntimeException("A file of that name already exists.");
-        }
 
-        throw new RuntimeException(e.getMessage());
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        String uniqueFilename = UUID.randomUUID().toString() + ext;
+        Path filePath = this.root.resolve(uniqueFilename);
+        Files.copy(file.getInputStream(), filePath);
+        String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageSub/").path(uniqueFilename).toUriString();
+        subForum.setNameImage(uniqueFilename);
+        subForum.setUrlImage(url);
       }
       subForum.setId(id);
       subForum.setJudul(body.getJudul());
       subForum.setDescription(body.getDescription());
       subForumRepository.save(subForum);
-
-      responAPI.setData(mapToSubResponse(subForum));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
       responAPI.setErrorMessage(MessageApi.SUCCESS);
     } catch (ValidationException e) {

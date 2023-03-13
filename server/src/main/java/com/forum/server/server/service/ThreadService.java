@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.forum.server.server.base.BasePageInterface;
@@ -36,7 +38,7 @@ import com.forum.server.server.payload.response.DtoResListThread;
 import com.forum.server.server.payload.response.LikeResponse;
 import com.forum.server.server.payload.response.ThreadResponse;
 import com.forum.server.server.repository.*;
-import com.forum.server.server.specification.ThreadSpecification;
+import com.forum.server.server.specification.*;
 
 import javax.validation.ValidationException;
 
@@ -46,6 +48,9 @@ public class ThreadService {
 
   @Autowired
   private ThreadSpecification specification;
+
+  @Autowired
+  private LikeSpecification likeSpecification;
 
   @Autowired
   private SubForumRepository subForumRepository;
@@ -61,7 +66,6 @@ public class ThreadService {
 
   private ModelMapper objectMapper = new ModelMapper();
 
-  private String url = "http://10.10.102.97:8080/imageThread/";
 
   public boolean getThreadById(ResponAPI<DtoResListThread> responAPI, Long id) {
     addView(id);
@@ -73,30 +77,6 @@ public class ThreadService {
 
     try {
       DtoResListThread response = DtoResListThread.getInstance(optionalThread.get());
-      responAPI.setData(response);
-    } catch (Exception e) {
-      responAPI.setErrorMessage(e.getMessage());
-    }
-    return true;
-  }
-
-  public boolean getLikeByUser(ResponAPI<LikeResponse> responAPI, Long id) {
-    Optional<User> uOptional = userRepository.findById(id);
-    if (!uOptional.isPresent()) {
-      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
-      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
-      return false;
-    }
-    User user = uOptional.get();
-
-    Optional<UserLike> optionalLike = likeRepository.findByUser(user);
-    if (!optionalLike.isPresent()) {
-      responAPI.setErrorMessage("Data tidak ditemukan!");
-      return false;
-    }
-
-    try {
-      LikeResponse response = LikeResponse.getInstance(optionalLike.get());
       responAPI.setData(response);
     } catch (Exception e) {
       responAPI.setErrorMessage(e.getMessage());
@@ -131,19 +111,16 @@ public class ThreadService {
       }
 
       Thread thread = new Thread();
-      if(file != null) {
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
-        thread.setNameImage(filename);
-        thread.setUrlImage(url + filename);
-        try {
-          Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-        } catch (Exception e) {
-          if (e instanceof FileAlreadyExistsException) {
-            throw new RuntimeException("A file of that name already exists.");
-          }
-  
-          throw new RuntimeException(e.getMessage());
-        }
+      if (file != null) {
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        String uniqueFilename = UUID.randomUUID().toString() + ext;
+        Path filePath = this.root.resolve(uniqueFilename);
+        Files.copy(file.getInputStream(), filePath);
+        String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageThread/").path(uniqueFilename).toUriString();
+        
+        thread.setNameImage(uniqueFilename);
+        thread.setUrlImage(url);
       }
 
       thread.setTitle(body.getTitle());
@@ -167,45 +144,36 @@ public class ThreadService {
   }
 
   public boolean updateThread(ThreadRequest body, MultipartFile file, Long id, ResponAPI<ThreadResponse> responAPI) {
-    Optional<Thread> tOptional = threadRepository.findById(id);
-    if (!tOptional.isPresent()) {
-      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
-      responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
-      return false;
-    }
     try {
-      Thread thread = tOptional.get();
-      if (file.isEmpty()) {
-        responAPI.setErrorMessage("File tidak boleh kosong");
-        responAPI.setErrorCode(ErrorCodeApi.FAILED);
+      Optional<Thread> tOptional = threadRepository.findById(id);
+      if (!tOptional.isPresent()) {
+        responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
+        responAPI.setErrorMessage(MessageApi.BODY_NOT_VALID);
         return false;
       }
-      try {
+      Thread thread = tOptional.get();
+      if (file != null) {
         String nameImage = thread.getNameImage();
-        Path oldFile = root.resolve(nameImage);
-        Files.deleteIfExists(oldFile);
-        Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
-        thread.setNameImage(filename);
-        thread.setUrlImage(url + filename);
-      } catch (Exception e) {
-        if (e instanceof FileAlreadyExistsException) {
-          throw new RuntimeException("A file of that name already exists.");
+        if(nameImage != null) {
+          Path oldFile = root.resolve(nameImage);
+          Files.deleteIfExists(oldFile);
         }
-
-        throw new RuntimeException(e.getMessage());
+        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+        String ext = originalFilename.substring(originalFilename.lastIndexOf('.'));
+        String uniqueFilename = UUID.randomUUID().toString() + ext;
+        Path filePath = this.root.resolve(uniqueFilename);
+        Files.copy(file.getInputStream(), filePath);
+        String url = ServletUriComponentsBuilder.fromCurrentContextPath().path("/imageThread/").path(uniqueFilename).toUriString();
+        thread.setNameImage(uniqueFilename);
+        thread.setUrlImage(url);
       }
+
       thread.setId(id);
       thread.setTitle(body.getTitle());
       thread.setContent(body.getContent());
       threadRepository.save(thread);
 
-      responAPI.setData(mapToThreadResponse(thread));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
-      responAPI.setErrorMessage(MessageApi.SUCCESS);
-    } catch (ValidationException e) {
-      responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
-      responAPI.setErrorMessage(e.getMessage());
     } catch (Exception e) {
       responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
       responAPI.setErrorMessage(e.getMessage());
@@ -224,28 +192,23 @@ public class ThreadService {
     try {
       Thread thread = tOptional.get();
       String nameImage = thread.getNameImage();
-      Path file = root.resolve(nameImage);
-      try {
-        Files.delete(file);
-      } catch (Exception e) {
-        e.printStackTrace();
-        return false;
+      if(nameImage != null) {
+        Path file = root.resolve(nameImage);
+        try {
+          Files.deleteIfExists(file);
+        } catch (Exception e) {
+          e.printStackTrace();
+          return false;
+        }
       }
       threadRepository.deleteById(id);
-
-      responAPI.setData(mapToThreadResponse(thread));
       responAPI.setErrorCode(ErrorCode.SUCCESS);
-      responAPI.setErrorMessage(MessageApi.SUCCESS);
     } catch (Exception e) {
       responAPI.setErrorCode(ErrorCode.BODY_NOT_VALID);
       responAPI.setErrorMessage(e.getMessage());
       return false;
     }
     return true;
-  }
-
-  private ThreadResponse mapToThreadResponse(Thread thread) {
-    return objectMapper.map(thread, ThreadResponse.class);
   }
 
   public Page<DtoResListThread> getAll(int page, int limit, Long id) {
@@ -389,6 +352,22 @@ public class ThreadService {
       return false;
     }
     return true;
+  }
+
+  public List<LikeResponse> getLikeByUserId(Long id) {
+    List<UserLike> userLikes = likeRepository.findAll(likeSpecification.userEqual(id));
+    return userLikes.stream()
+        .map(LikeResponse::getInstance)
+        .collect(Collectors.toList());
+  }
+
+  public List<DtoResListThread> getPopularThreads() {
+    ThreadPopulerSpecification specification = new ThreadPopulerSpecification();
+    PageRequest pageRequest = PageRequest.of(0, 4);
+    Page<Thread> threads = threadRepository.findAll(specification, pageRequest);
+    return threads.stream()
+        .map(DtoResListThread::getInstance)
+        .collect(Collectors.toList());
   }
 
 }

@@ -2,12 +2,14 @@ package com.forum.server.server.controllers;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -20,7 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// import com.forum.server.server.base.BaseController;
+import com.forum.server.server.base.ResponAPI;
+import com.forum.server.server.constant.ErrorCode;
 import com.forum.server.server.exception.TokenRefreshException;
 import com.forum.server.server.models.ERole;
 import com.forum.server.server.models.RefreshToken;
@@ -38,8 +41,8 @@ import com.forum.server.server.security.jwt.JwtUtils;
 import com.forum.server.server.security.services.RefreshTokenService;
 import com.forum.server.server.security.services.UserDetailslmpl;
 
-@CrossOrigin(origins = "http://10.10.102.97:8081")
-// @CrossOrigin(origins = "http://localhost:8081")
+// @CrossOrigin(origins = "http://10.10.102.90:8081")
+@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -63,7 +66,6 @@ public class AuthController {
 
   @PostMapping("/signin")
   public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-
     Authentication authentication = authenticationManager
         .authenticate(new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
@@ -158,8 +160,6 @@ public class AuthController {
 
   @PostMapping("/signout")
   public ResponseEntity<?> logoutUser() {
-    // Insert Table logout true
-    // created_at dan expired_at
     UserDetailslmpl userDetails = (UserDetailslmpl) SecurityContextHolder.getContext().getAuthentication()
         .getPrincipal();
     Long userId = userDetails.getId();

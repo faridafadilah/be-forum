@@ -32,16 +32,13 @@ import com.forum.server.server.payload.response.MainResponse;
 import com.forum.server.server.service.MainService;
 import com.forum.server.server.specification.MainSpecification;
 
-@CrossOrigin(origins = "http://10.10.102.97:8081")
-// @CrossOrigin(origins = "http://localhost:8081")
+// @CrossOrigin(origins = "http://10.10.102.90:8081")
+@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/main")
 public class MainForumController extends BaseModel {
   @Autowired
   private MainService mainService;
-
-  @Autowired
-  private MainSpecification mainSpecification;
 
   //Get All Main Forum
   @GetMapping("")
@@ -120,7 +117,8 @@ public class MainForumController extends BaseModel {
   // Edit Main Forum
   @PostMapping("/{id}")
   public ResponseEntity<ResponAPI<MainResponse>> updateMainForum(@PathVariable Long id,
-      @ModelAttribute MainRequest body, @RequestParam("file") MultipartFile file) {
+      @ModelAttribute MainRequest body, @RequestParam(value = "file", required = false) MultipartFile file) {
+        // System.out.println(file);
     ResponAPI<MainResponse> responAPI = new ResponAPI<>();
     if (!mainService.updateMainForum(body, file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);

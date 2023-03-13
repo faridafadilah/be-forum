@@ -24,8 +24,8 @@ import com.forum.server.server.payload.response.DtoResListSub;
 import com.forum.server.server.payload.response.SubResponse;
 import com.forum.server.server.service.SubService;
 
-@CrossOrigin(origins = "http://10.10.102.97:8081")
-// @CrossOrigin(origins = "http://localhost:8081")
+// @CrossOrigin(origins = "http://10.10.102.90:8081")
+@CrossOrigin(origins = "http://localhost:8081")
 @RestController
 @RequestMapping("/api/sub")
 public class SubForumController extends BaseModel {
@@ -70,7 +70,7 @@ public class SubForumController extends BaseModel {
 
   //Edit Sub Forum
   @PostMapping("/{id}")
-  public ResponseEntity<ResponAPI<SubResponse>> updateSubForum(@PathVariable Long id, @ModelAttribute SubRequest body, @RequestParam("file") MultipartFile file) {
+  public ResponseEntity<ResponAPI<SubResponse>> updateSubForum(@PathVariable Long id, @ModelAttribute SubRequest body, @RequestParam(value = "file", required = false) MultipartFile file) {
     ResponAPI<SubResponse> responAPI = new ResponAPI<>();
     if(!subService.updateSubForum(body, file, id, responAPI)) {
       return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responAPI);

@@ -9,5 +9,4 @@ import java.util.*;
 
 public interface UserLikeRepository extends JpaRepository<UserLike, Long>, JpaSpecificationExecutor<UserLike> {
   Optional<UserLike> findByThreadAndUser(Thread thread, User user);
-  Optional<UserLike> findByUser(User user);
 }
